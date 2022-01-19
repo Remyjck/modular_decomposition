@@ -25,18 +25,18 @@ let add_or_init new_elem y =
   | None -> Some [new_elem]
   | Some z -> Some (new_elem :: z)
 
-let rec edge_list_to_hashmap edges atommap = 
+let rec edge_list_to_map edges atommap = 
   match edges with
   | [] -> atommap
   | (x, y) :: t -> 
     let atommap1 = AtomMap.update x (add_or_init y) atommap in
     let atommap2 = AtomMap.update y (add_or_init y) atommap1 in
-    edge_list_to_hashmap t atommap2
+    edge_list_to_map t atommap2
 
-let edge_list_to_hashmap (g : edge_list_graph) = 
+let edge_list_to_map (g : edge_list_graph) = 
   {
     nodes = g.nodes;
-    edges = edge_list_to_hashmap g.edges AtomMap.empty
+    edges = edge_list_to_map g.edges AtomMap.empty
   }
 
 (* let rec induced_graph_edges edges vertices res = 
