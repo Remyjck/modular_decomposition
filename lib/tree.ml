@@ -101,3 +101,51 @@ let rec maximal_subtree mdt x =
       | Prime treegraph -> 
         let subgraph = induced_treegraph treegraph successor_list in
         Some (Node {node = Prime subgraph; mark = mark})
+
+type path = 
+  | Top
+  | Node of t * t list * path * t list
+
+type zipper =
+  {
+    path : path;
+    tree : t;
+  }
+
+let top_tree t = {path = Top; tree = t}
+
+let go_left z = match z.path with
+  | Top -> invalid_arg "left of top"
+  | Node (node, l::left, up, right) ->
+    {
+      path = Node(node, left, up, z.tree::right);
+      tree = l;
+    }
+  | Node (_, [], _, _) -> invalid_arg "left of first"
+
+let go_right z = match z.path with
+  | Top -> invalid_arg "right of top"
+  | Node (node, left, up, r::right) ->
+    {
+      path = Node(node, z.tree::left, up, right);
+      tree = r;
+    }
+  | Node (_, _, _, []) -> invalid_arg "right of last"
+
+let go_up z = match z.path with
+  | Top -> invalid_arg "up of top"
+  | Node (node, _, up, _) ->
+    match node with 
+    | Leaf _ -> failwith "up to leaf"
+    | node -> { tree = node; path = up; }
+
+let go_down z = match z.tree with
+  | Leaf _ -> invalid_arg "down of leaf"
+  | node ->
+    match successors node with
+    | t1 :: trees -> 
+      {
+        path = Node(node, [], z.path, trees);
+        tree = t1;
+      }
+    | [] -> invalid_arg "down to empty"
