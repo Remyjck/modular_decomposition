@@ -1,23 +1,46 @@
 open Graph
 
-type node  = 
-  | Par
-  | Tensor
-  | Prime
-
 type marking = 
   | Unmarked
   | Left
   | Right
   | Mix
 
-type modularTree = 
-  | Leaf of atom 
-  | Node of { 
-    tl : modularTree list;
-    node : node;
-    mutable mark : marking;
-    }
+module rec A : sig
+  type t = 
+    | Leaf of atom 
+    | Node of { 
+      node : node;
+      mutable mark : marking;
+      }
+  and node = 
+    | Par of t list
+    | Tensor of t list
+    | Prime of t list TreeGraph.t 
+  val compare: t -> t -> int
+end = struct
+  type t = 
+    | Leaf of atom 
+    | Node of { 
+      node : node;
+      mutable mark : marking;
+      }
+  and node = 
+    | Par of t list
+    | Tensor of t list
+    | Prime of t list TreeGraph.t 
+  let compare t1 t2 = 
+    match (t1, t2) with
+    | (Leaf a1, Leaf a2) -> Stdlib.compare a1 a2 
+    | (Leaf _, Node _) -> 1
+    | (Node _, Leaf _) -> -1
+    | (Node n1, Node n2) -> Stdlib.compare n1.node n2.node
+end
+and TreeGraph
+  : Map.S with type key = A.t 
+  = Map.Make(A)
+
+open A
 
 let update_marking node mark = 
   match node with
@@ -35,14 +58,28 @@ let update_marking node mark =
       | Left | Mix -> node.mark <- Mix)
     | Mix -> ()
 
-let rec tree_nodes tree res =
-  match tree with
-  | Leaf x -> x :: res
+let successors node = 
+  match node with
+  | Leaf _ -> []
   | Node node ->
-    List.concat_map (fun elem -> tree_nodes elem res) node.tl
+    match node.node with 
+    | Par tl | Tensor tl -> tl
+    | Prime treegraph -> TreeGraph.bindings treegraph |> List.map fst
 
 let tree_nodes tree = 
+  let rec tree_nodes tree res =
+    match tree with
+    | Leaf x -> x :: res
+    | node ->
+      List.concat_map (fun elem -> tree_nodes elem res) (successors node)
+  in
   tree_nodes tree []
+
+let induced_treegraph g trees = 
+  let filtered_keys =
+    TreeGraph.filter (fun key _ -> List.mem key trees) g
+  in
+  TreeGraph.map (List.filter (fun elem -> List.mem elem trees)) filtered_keys
 
 let rec maximal_subtree mdt x = 
   match mdt with
@@ -50,9 +87,17 @@ let rec maximal_subtree mdt x =
   | Node node ->
     let subtrees = List.map 
       (fun tree -> maximal_subtree tree x)
-      node.tl
+      (successors (Node node))
     in
     match subtrees with
     | [] -> None
     | [st] -> st
-    | stl -> Some (Node {tl = Util.sanitize stl; node = node.node; mark = node.mark})
+    | stl -> 
+      let mark = node.mark in
+      let successor_list = Util.sanitize stl in
+      match node.node with
+      | Par _ -> Some (Node {node = Par successor_list; mark = mark})
+      | Tensor _ -> Some (Node {node = Tensor successor_list; mark = mark})
+      | Prime treegraph -> 
+        let subgraph = induced_treegraph treegraph successor_list in
+        Some (Node {node = Prime subgraph; mark = mark})
