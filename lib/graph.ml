@@ -31,32 +31,31 @@ type map_graph =
     edges : vertex list AtomMap.t;
   }
 
-let rec edge_list_to_map edges atommap = 
-  match edges with
-  | [] -> atommap
-  | (x, y) :: t -> 
-    let atommap1 = AtomMap.update x (Util.add_or_init y) atommap in
-    let atommap2 = AtomMap.update y (Util.add_or_init y) atommap1 in
-    edge_list_to_map t atommap2
-
 let edge_list_to_map (g : edge_list_graph) = 
+  let rec edge_list_to_map edges atommap = 
+    match edges with
+    | [] -> atommap
+    | (x, y) :: t -> 
+      let atommap1 = AtomMap.update x (Util.add_or_init y) atommap in
+      let atommap2 = AtomMap.update y (Util.add_or_init y) atommap1 in
+      edge_list_to_map t atommap2
+  in
   {
     nodes = g.nodes;
     edges = edge_list_to_map g.edges AtomMap.empty
   }
 
-let induced_graph_edges edges vertices = 
-  AtomMap.map 
-    (fun vl -> List.filter 
-      (fun x -> (List.mem x vertices))
-      vl)
-    edges
-
 let induced_graph g vertices = 
-  let induced_edges = induced_graph_edges g.edges vertices in 
+  let induced_graph_edges edges vertices = 
+    AtomMap.map 
+      (fun vl -> List.filter 
+        (fun x -> (List.mem x vertices))
+        vl)
+      edges
+  in
   { 
     nodes = vertices;
-    edges = induced_edges
+    edges = induced_graph_edges g.edges vertices
   }
 
 let neighbours g x = 
@@ -73,15 +72,15 @@ let compute_neighborhoods g x =
   let nnbgh = non_neighborhood g neighborhood in
   (neighborhood, nnbgh)
 
-let rec neighbour_list g neigh nngh res = 
-  match nngh with 
-  | [] -> res
-  | x :: t -> let neighx = neighbours g x in
-    match List.find_opt (fun x -> List.mem x neigh) neighx with
-    | None -> neighbour_list g neigh t res
-    | Some _ -> neighbour_list g neigh t (x :: res)
-
 let neighbour_list g neighx nnghx = 
+  let rec neighbour_list g neigh nngh res = 
+    match nngh with 
+    | [] -> res
+    | x :: t -> let neighx = neighbours g x in
+      match List.find_opt (fun x -> List.mem x neigh) neighx with
+      | None -> neighbour_list g neigh t res
+      | Some _ -> neighbour_list g neigh t (x :: res)
+  in
   neighbour_list g neighx nnghx []
 
 let dfs graph =
