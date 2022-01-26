@@ -6,46 +6,21 @@ type marking =
   | Right
   | Mix
 
-module rec A : sig
-  type t = 
-    | Leaf of atom 
-    | Node of { 
-      node : node;
-      mutable mark : marking;
-      }
-  and node = 
-    | Par of t list
-    | Tensor of t list
-    | Prime of t list TreeGraph.t 
-  val compare: t -> t -> int
-end = struct
-  type t = 
-    | Leaf of atom 
-    | Node of { 
-      node : node;
-      mutable mark : marking;
-      }
-  and node = 
-    | Par of t list
-    | Tensor of t list
-    | Prime of t list TreeGraph.t 
-  let compare t1 t2 = 
-    match (t1, t2) with
-    | (Leaf a1, Leaf a2) -> Stdlib.compare a1 a2 
-    | (Leaf _, Node _) -> 1
-    | (Node _, Leaf _) -> -1
-    | (Node n1, Node n2) -> Stdlib.compare n1.node n2.node
-end
-and TreeGraph
-  : Map.S with type key = A.t 
-  = Map.Make(A)
+type connective =
+  | Empty
+  | Leaf of atom
+  | Par
+  | Tensor
+  | Prime of int list list 
 
-open A
+type tree = {
+    connective : connective;
+    mutable mark : marking;
+    successors : tree list;
+    id : int;
+  }
 
 let update_marking node mark = 
-  match node with
-  | Leaf _ -> ()
-  | Node node ->
     match node.mark with
     | Unmarked -> node.mark <- mark
     | Left -> 
@@ -58,58 +33,43 @@ let update_marking node mark =
       | Left | Mix -> node.mark <- Mix)
     | Mix -> ()
 
-let successors node = 
-  match node with
-  | Leaf _ -> []
-  | Node node ->
-    match node.node with 
-    | Par tl | Tensor tl -> tl
-    | Prime treegraph -> TreeGraph.bindings treegraph |> List.map fst
-
 let tree_nodes tree = 
   let rec tree_nodes tree res =
-    match tree with
+    match tree.connective with
     | Leaf x -> x :: res
-    | node ->
-      List.concat_map (fun elem -> tree_nodes elem res) (successors node)
+    | Empty | Par | Tensor | Prime _ ->
+      List.concat_map (fun elem -> tree_nodes elem res) (tree.successors)
   in
   tree_nodes tree []
 
-let induced_treegraph g trees = 
-  let filtered_keys =
-    TreeGraph.filter (fun key _ -> List.mem key trees) g
-  in
-  TreeGraph.map (List.filter (fun elem -> List.mem elem trees)) filtered_keys
-
 let rec maximal_subtree mdt x = 
-  match mdt with
-  | Leaf a -> if List.mem a x then Some (Leaf a) else None
-  | Node node ->
+  match mdt.connective with
+  | Leaf a ->
+    if List.mem a x then 
+      mdt
+    else 
+      {connective = Empty; mark = mdt.mark; id = mdt.id; successors = []}
+  | _ ->
     let subtrees = List.map 
       (fun tree -> maximal_subtree tree x)
-      (successors (Node node))
+      mdt.successors
     in
-    match subtrees with
-    | [] -> None
-    | [st] -> st
-    | stl -> 
-      let mark = node.mark in
-      let successor_list = Util.sanitize stl in
-      match node.node with
-      | Par _ -> Some (Node {node = Par successor_list; mark = mark})
-      | Tensor _ -> Some (Node {node = Tensor successor_list; mark = mark})
-      | Prime treegraph -> 
-        let subgraph = induced_treegraph treegraph successor_list in
-        Some (Node {node = Prime subgraph; mark = mark})
-
+    let successor_list = List.filter 
+      (fun elem -> elem.connective <> Empty )
+      subtrees
+    in
+    match successor_list with
+    | [] -> {connective = Empty; mark = mdt.mark; successors = []; id = mdt.id}
+    | l -> {connective = mdt.connective; mark = mdt.mark; successors = l; id = mdt.id}
+  
 type path = 
   | Top
-  | Node of t * t list * path * t list
+  | Node of tree * tree list * path * tree list
 
 type zipper =
   {
     path : path;
-    tree : t;
+    tree : tree;
   }
 
 let top_tree t = {path = Top; tree = t}
@@ -135,17 +95,17 @@ let go_right z = match z.path with
 let go_up z = match z.path with
   | Top -> invalid_arg "up of top"
   | Node (node, _, up, _) ->
-    match node with 
+    match node.connective with 
     | Leaf _ -> failwith "up to leaf"
-    | node -> { tree = node; path = up; }
+    | _ -> { tree = z.tree; path = up; }
 
-let go_down z = match z.tree with
+let go_down z = match z.tree.connective with
   | Leaf _ -> invalid_arg "down of leaf"
-  | node ->
-    match successors node with
+  | _ ->
+    match z.tree.successors with
     | t1 :: trees -> 
       {
-        path = Node(node, [], z.path, trees);
+        path = Node(z.tree, [], z.path, trees);
         tree = t1;
       }
     | [] -> invalid_arg "down to empty"
