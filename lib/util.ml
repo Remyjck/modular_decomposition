@@ -13,3 +13,5 @@ let list_difference main sub =
       else
         rlist_difference t sub (h :: res)
   in rlist_difference main sub []
+
+let flip f x y = f y x
