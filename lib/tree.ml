@@ -208,14 +208,13 @@ let is_root zipper =
   | Top -> true
   | _ -> false
 
-let replace_by_double forest replacee (r1, r2) = 
-  let og_id = replacee.tree.id in
+let replace_by_list forest replacee replacements = 
   let rec replace forest =
     match forest with
     | [] -> []
     | h :: t ->
-      if h.tree.id = og_id then
-        r1 :: r2 :: t 
+      if h.tree.id = replacee.tree.id then
+        replacements @ t 
       else
         h :: (replace t)
   in
