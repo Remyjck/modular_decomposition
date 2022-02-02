@@ -50,3 +50,9 @@ let refine forest x direction =
       refine_iter t new_forest
   in
   refine_iter parent_nodes forest
+
+let promotion forest =
+  let left_promoted = unfold forest Left in
+  let right_promoted = unfold left_promoted Right in
+  let cleaned = delete_marked right_promoted in
+  List.map remove_marks cleaned

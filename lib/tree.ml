@@ -124,12 +124,12 @@ let update_marking z m =
   | Unmarked -> m
   | Left ->
     (match m with 
-    | Unmarked | Left -> Left
-    | Right | Mix -> Mix)
+    | Right -> Mix
+    | mark -> mark)
   | Right ->
     (match m with
-    | Unmarked | Right -> Right
-    | Left | Mix -> Mix)
+    | Left -> Mix
+    | mark -> mark)
   | Mix -> Mix
   in
   change_marking z new_mark
@@ -268,3 +268,67 @@ let rec mark_children z mark =
         _ -> z
     in
     mark_siblings first_child mark |> go_up
+
+let remove_marks z =
+  mark_ancestors z Unmarked |> Util.flip mark_children Unmarked 
+
+let delete_marked forest =
+  let rec delete_marked forest res change =
+    match forest with
+    | [] -> if change 
+      then delete_marked res [] false
+      else res
+    | h :: t ->
+      match h.tree.mark with
+      | Unmarked -> delete_marked t (h :: res) change
+      | _ ->
+        match h.tree.successors with
+        | [] -> delete_marked t res change
+        | [c] -> delete_marked t (top_tree c :: res) true
+        | _ -> delete_marked t (h :: res) change
+  in
+  delete_marked forest [] false
+
+let delete_from_children z c =
+  let rec new_children tl c =
+    match tl with
+    | [] -> []
+    | h :: t ->
+      if h = c then t
+      else h :: new_children t c
+  in
+  let new_tree = 
+    {
+      connective = z.tree.connective;
+      mark = z.tree.mark;
+      successors = new_children z.tree.successors c;
+      id = z.tree.id;
+    }
+  in
+  change z new_tree
+
+let unfold forest mark =
+  let rec unfold forest mark res changed =
+    match forest with
+    | [] -> if changed
+      then unfold (List.rev res) mark [] false
+      else List.rev res
+    | h :: t ->
+      if h.tree.mark = mark || h.tree.mark = Mix
+      then 
+        let marked_child = List.find_opt
+          (fun t -> t.mark = mark || t.mark = Mix)
+          h.tree.successors
+        in
+        match marked_child with
+        | None -> unfold t mark (h :: res) changed
+        | Some c ->
+          let new_h = delete_from_children h c in
+          match mark with
+          | Left -> unfold t mark (new_h :: top_tree c :: res) true
+          | Right -> unfold t mark (top_tree c :: new_h :: res) true
+          | _ -> failwith "unfolded forest on unexpected mark"
+      else
+        unfold t mark (h :: res) true
+  in
+  unfold forest mark [] false

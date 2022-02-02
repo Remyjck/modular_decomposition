@@ -38,3 +38,6 @@ val replace_by_list :
 val replace_children : zipper list -> zipper -> tree list -> zipper list
 val mark_ancestors : zipper -> marking -> zipper
 val mark_children : zipper -> marking -> zipper
+val unfold : zipper list -> marking -> zipper list
+val delete_marked : zipper list -> zipper list
+val remove_marks : zipper -> zipper
