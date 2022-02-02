@@ -15,7 +15,6 @@ type vertex =
   {
     value : atom;
     mutable visited : visited;
-    mutable alpha : vertex list;
   }
 
 type edge_list_graph = 
