@@ -276,14 +276,17 @@ let delete_marked forest =
   let rec delete_marked forest res change =
     match forest with
     | [] -> if change 
-      then delete_marked res [] false
-      else res
+      then delete_marked (List.rev res) [] false
+      else List.rev res
     | h :: t ->
       match h.tree.mark with
       | Unmarked -> delete_marked t (h :: res) change
       | _ ->
         match h.tree.successors with
-        | [] -> delete_marked t res change
+        | [] ->
+          (match h.tree.connective with
+          | Leaf _ -> delete_marked t (h :: res) change
+          | _ -> delete_marked t res change)
         | [c] -> delete_marked t (top_tree c :: res) true
         | _ -> delete_marked t (h :: res) change
   in
