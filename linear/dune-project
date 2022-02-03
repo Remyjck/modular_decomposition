@@ -1,6 +1,6 @@
 (lang dune 2.9)
-(name modular_decomposition)
+(name linear_MD)
 
 (package
-  (name modular_decomposition)
+  (name linear_MD)
   (synopsis "Modular decomposition of undirected graphs"))

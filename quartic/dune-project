@@ -1,0 +1,6 @@
+(lang dune 2.9)
+(name quartic_MD)
+
+(package
+  (name quartic_MD)
+  (synopsis "Modular decomposition of undirected graphs"))
