@@ -8,7 +8,7 @@ type marking =
 
 type connective =
   | Empty
-  | Leaf of atom
+  | Leaf of vertex
   | Par
   | Tensor
   | Prime 

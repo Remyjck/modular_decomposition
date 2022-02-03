@@ -1,7 +1,7 @@
 type marking = Unmarked | Left | Right | Mix
 type connective =
     Empty
-  | Leaf of Graph.atom
+  | Leaf of Graph.vertex
   | Par
   | Tensor
   | Prime
@@ -11,7 +11,7 @@ type tree = {
   successors : tree list;
   id : int;
 }
-val tree_nodes : tree -> Graph.atom list
+val tree_nodes : tree -> Graph.vertex list
 type path = Top | Node of tree * tree list * path * tree list
 type zipper = { path : path; tree : tree; }
 val top_tree : tree -> zipper
@@ -24,12 +24,12 @@ val change : zipper -> tree -> zipper
 val update_marking : zipper -> marking -> zipper
 val zipper_children : zipper -> zipper list
 val leaves_dfs :
-  Graph.atom list -> zipper -> zipper list
+  Graph.vertex list -> zipper -> zipper list
 val share_parent : zipper -> zipper -> bool
 val maximal_subtree :
-  zipper -> Graph.atom list -> zipper list
+  zipper -> Graph.vertex list -> zipper list
 val maximal_subtrees :
-  zipper list -> Graph.atom list -> zipper list
+  zipper list -> Graph.vertex list -> zipper list
 val parents : zipper list -> zipper list
 val unify : tree list -> zipper -> zipper
 val is_root : zipper -> bool

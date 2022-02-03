@@ -6,14 +6,10 @@ type atom =
     pol : bool;
   }
 
-type visited = 
-  | Unvisited
-  | Visited
-
 type vertex = 
   {
     value : atom;
-    mutable visited : visited;
+    id : int;
   }
 
 type edge_list_graph =

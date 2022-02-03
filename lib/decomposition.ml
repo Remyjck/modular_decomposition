@@ -77,17 +77,15 @@ let active_edges graph v forest x =
         siblings v t
   in 
   let siblings = siblings v forest in
-  let neighbours = Graph.AtomMap.find {value = v; visited = Unvisited} graph in
-  List.filter (fun v -> List.mem v.Graph.value siblings |> not) neighbours
+  let neighbours = Graph.AtomMap.find v graph in
+  List.filter (fun v -> List.mem v siblings |> not) neighbours
         
 let rec refine_top graph vertices x forest =
   match vertices with
   | [] -> forest
   | v :: t ->
     let direction = position v x forest in
-    let active_edges = active_edges graph v forest x
-      |> List.map (fun v -> v.Graph.value) 
-    in
+    let active_edges = active_edges graph v forest x in
     let new_forest = refine forest active_edges direction in
     refine_top graph t x new_forest
 
