@@ -1,8 +1,7 @@
-type var = int
 
 type atom = 
   {
-    var : var;
+    var : int;
     pol : bool;
   }
 
@@ -11,8 +10,8 @@ module ISet = Set.Make(Int)
 
 type node =
   | Atom of atom
-  | Tensor
-  | Par
+  | Tensor of ISet.t
+  | Par of ISet.t
   | Prime of ISet.t IMap.t
 
 type vertex = 
@@ -34,6 +33,12 @@ type graph =
     nodes : VSet.t;
     edges : VSet.t VMap.t;
   }
+
+let total_vertices = ref 0
+
+let fresh_id = 
+  total_vertices := !total_vertices + 1;
+  !total_vertices - 1
 
 (** [<~> graph vertices]: subgraph of [graph] that contains all vertices not in [vertices] *)
 let (<~>) graph vertices =
@@ -151,3 +156,48 @@ let cc_and_is g =
       iterate_i (i+1) updated_res
   in
   iterate_i 1 (Subsetset.empty)
+
+type connective =
+  | ParCon
+  | TensorCon
+  | PrimeCon
+
+let replace graph h vertex =
+  let new_nodes = VSet.diff graph.nodes h in
+  let new_edges =
+    VMap.filter (fun v _ -> not (VSet.mem v h)) graph.edges
+    |> VMap.map (fun s -> 
+      if not (VSet.disjoint s h) then
+        VSet.add vertex s |> Util.flip VSet.diff h
+      else s)
+  in
+  {nodes = new_nodes; edges = new_edges}
+
+let vset_to_iset vset =
+  VSet.fold (fun v -> ISet.add v.id) vset ISet.empty
+
+let iset_to_vset map iset =
+  ISet.fold (fun i -> VSet.add (IMap.find i map)) iset VSet.empty
+
+let vmap_to_imap map =
+  VMap.fold
+    (fun k v -> IMap.add k.id (vset_to_iset v))
+    map
+    IMap.empty
+
+let new_node graph h connective =
+  match connective with
+  | ParCon -> Par (vset_to_iset h)
+  | TensorCon -> Tensor (vset_to_iset h)
+  | PrimeCon -> 
+    let subgraph = induced_subgraph graph h in
+    Prime (vmap_to_imap subgraph.edges)
+
+let condense graph h connective =
+  let new_vertex = 
+    {
+      connective = new_node graph h connective;
+      id = fresh_id;
+    }
+  in
+  replace graph h new_vertex
