@@ -234,22 +234,6 @@ let vertex_neighbour_pairs v edge_map =
       VSet.of_list [vi; vj])
     v
 
-let rec before v1 v2 vl =
-  match vl with
-  | [] -> raise Not_found
-  | v :: _ when (v = v1) -> true
-  | v :: _ when (v = v2) -> false
-  | _ :: t -> before v1 v2 t
-
-let index elem l =
-  let rec index_r elem l i =
-    match l with
-    | [] -> raise Not_found
-    | h :: t ->
-      if h = elem then i else index_r elem t (i+1)
-  in
-  index_r elem l 0
-
 module VSetSet = Set.Make(VSet)
 
 (** [condensible_subgraphs graph]: corresponds to algorithm 3.6 of the paper *)
@@ -260,13 +244,13 @@ let condensible_subgraphs graph =
   let () = assert (List.length v = List.length h) in
   let m = List.map (VSet.cardinal) h in
   let to_delete vi =
-    let i = index vi v in
+    let i = Util.index vi v in
     let hi = List.nth h i in
     let mi = List.nth m i in
-    let hj = VSet.filter (fun vj -> before vi vj v) hi in
+    let hj = VSet.filter (fun vj -> Util.before vi vj v) hi in
     VSet.fold 
       (fun vj -> 
-        let j = index vj v in
+        let j = Util.index vj v in
         let mj = List.nth m j in
         if mj >= mi then VSetSet.add (List.nth h j) else VSetSet.add hi)
       hj
