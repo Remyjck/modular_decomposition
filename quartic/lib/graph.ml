@@ -69,7 +69,31 @@ let w g h v =
 let is_module g h =
   let connected = VSet.choose h |> w g h in
   VSet.for_all (fun v -> connected = w g h v)
-  
+
+let remove_vertex v edges =
+  VMap.filter (fun vi _ -> not (vi = v)) edges
+  |> VMap.map (VSet.remove v)
+
+let rec edge_tuple_list edge_map =
+  if VMap.is_empty edge_map then
+    []
+  else
+    let vi, vi_neighbours = VMap.choose edge_map in
+    let new_edge_map = remove_vertex vi edge_map in
+    if VSet.is_empty vi_neighbours then edge_tuple_list new_edge_map else
+    let new_edges = VSet.fold (fun vj -> List.cons (vi, vj)) vi_neighbours [] in
+    new_edges @ edge_tuple_list new_edge_map
+
+let rec edge_set_list edge_map =
+  if VMap.is_empty edge_map then
+    []
+  else
+    let vi, vi_neighbours = VMap.choose edge_map in
+    let new_edge_map = remove_vertex vi edge_map in
+    if VSet.is_empty vi_neighbours then edge_set_list new_edge_map else
+    let new_edges = VSet.fold (fun vj -> List.cons (VSet.of_list [vi; vj])) vi_neighbours [] in
+    new_edges @ edge_set_list new_edge_map
+
 (** [smallest_condensible graph set]: returns the smallest condensible set containing all vertices of [set] *)
 let smallest_condensible g v =
   let vl = VSet.elements v in
@@ -201,3 +225,40 @@ let condense graph h connective =
     }
   in
   replace graph h new_vertex
+
+let vertex_neighbour_pairs v edge_map =
+  List.map 
+    (fun vi ->
+      let vi_neighbours = VMap.find vi edge_map in
+      let vj = VSet.choose vi_neighbours in
+      VSet.of_list [vi; vj])
+    v
+
+module VSetSet = Set.Make(VSet)
+
+(** [condensible_subgraphs graph]: corresponds to algorithm 3.6 of the paper *)
+let condensible_subgraphs graph =
+  let v = VSet.elements graph.nodes in
+  let edges = vertex_neighbour_pairs v graph.edges in
+  let h = List.map (smallest_condensible graph) edges in
+  let () = assert (List.length v = List.length h) in
+  let m = List.map (VSet.cardinal) h in
+  let to_delete vi =
+    let i = Util.index vi v in
+    let hi = List.nth h i in
+    let mi = List.nth m i in
+    let hj = VSet.filter (fun vj -> Util.before vi vj v) hi in
+    VSet.fold 
+      (fun vj -> 
+        let j = Util.index vj v in
+        let mj = List.nth m j in
+        if mj >= mi then VSetSet.add (List.nth h j) else VSetSet.add hi)
+      hj
+      VSetSet.empty
+    |> VSetSet.elements
+  in
+  let to_delete = List.concat_map to_delete v in
+  VSetSet.diff (VSetSet.of_list h) (VSetSet.of_list to_delete)
+    
+    
+
