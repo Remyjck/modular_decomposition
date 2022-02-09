@@ -70,10 +70,12 @@ let is_module g h =
   let connected = VSet.choose h |> w g h in
   VSet.for_all (fun v -> connected = w g h v)
 
+(** [remove_vertex vertex edges]: given a mapping [edges], remove [vertex] from its keys and values  *)
 let remove_vertex v edges =
   VMap.filter (fun vi _ -> not (vi = v)) edges
   |> VMap.map (VSet.remove v)
 
+(** [edge_tuple_list edges]: given a mapping [edges], return a corresponding list of edges (non-repeating) *)
 let rec edge_tuple_list edge_map =
   if VMap.is_empty edge_map then
     []
@@ -83,16 +85,6 @@ let rec edge_tuple_list edge_map =
     if VSet.is_empty vi_neighbours then edge_tuple_list new_edge_map else
     let new_edges = VSet.fold (fun vj -> List.cons (vi, vj)) vi_neighbours [] in
     new_edges @ edge_tuple_list new_edge_map
-
-let rec edge_set_list edge_map =
-  if VMap.is_empty edge_map then
-    []
-  else
-    let vi, vi_neighbours = VMap.choose edge_map in
-    let new_edge_map = remove_vertex vi edge_map in
-    if VSet.is_empty vi_neighbours then edge_set_list new_edge_map else
-    let new_edges = VSet.fold (fun vj -> List.cons (VSet.of_list [vi; vj])) vi_neighbours [] in
-    new_edges @ edge_set_list new_edge_map
 
 (** [smallest_condensible graph set]: returns the smallest condensible set containing all vertices of [set] *)
 let smallest_condensible g v =
@@ -187,13 +179,14 @@ type connective =
   | PrimeCon
 
 let replace graph h vertex =
-  let new_nodes = VSet.diff graph.nodes h in
+  let new_nodes = VSet.diff graph.nodes h |> VSet.add vertex in
   let new_edges =
     VMap.filter (fun v _ -> not (VSet.mem v h)) graph.edges
     |> VMap.map (fun s -> 
-      if not (VSet.disjoint s h) then
-        VSet.add vertex s |> Util.flip VSet.diff h
-      else s)
+      if VSet.disjoint s h then
+        s
+      else
+        VSet.add vertex s |> Util.flip VSet.diff h)
   in
   {nodes = new_nodes; edges = new_edges}
 
@@ -209,22 +202,44 @@ let vmap_to_imap map =
     map
     IMap.empty
 
-let new_node graph h connective =
-  match connective with
-  | ParCon -> Par (vset_to_iset h)
-  | TensorCon -> Tensor (vset_to_iset h)
-  | PrimeCon -> 
-    let subgraph = induced_subgraph graph h in
-    Prime (vmap_to_imap subgraph.edges)
+let subset_set_to_nodes subsetset =
+  Subsetset.fold
+    (fun ss -> 
+      let node =
+        match ss with
+        | Clique vset -> Tensor (vset_to_iset vset)
+        | IndSet vset -> Par (vset_to_iset vset)
+      in
+      List.cons node)
+    subsetset
+    []
 
-let condense graph h connective =
+  (* | PrimeCon -> 
+    let subgraph = induced_subgraph graph h in
+    Prime (vmap_to_imap subgraph.edges) *)
+
+let condense_subset graph subset =
+  let h, node = 
+    match subset with
+    | Clique set -> set, Tensor (vset_to_iset set)
+    | IndSet set -> set, Par (vset_to_iset set)
+  in
   let new_vertex = 
     {
-      connective = new_node graph h connective;
+      connective = node;
       id = fresh_id;
     }
   in
   replace graph h new_vertex
+
+let condense_prime graph node vertices =
+  let new_vertex =
+    {
+      connective = node;
+      id = fresh_id;
+    }
+  in 
+  replace graph vertices new_vertex
 
 let vertex_neighbour_pairs v edge_map =
   List.map 
@@ -260,5 +275,38 @@ let condensible_subgraphs graph =
   let to_delete = List.concat_map to_delete v in
   VSetSet.diff (VSetSet.of_list h) (VSetSet.of_list to_delete)
     
-    
+let condense_set graph subsets =
+  Subsetset.fold
+    (fun ss -> Util.flip condense_subset ss)
+    subsets
+    graph
 
+let rec condense_cliques graph =
+  let cliques_and_ind = cc_and_is graph in
+  if Subsetset.is_empty cliques_and_ind then
+    graph
+  else
+    condense_cliques (condense_set graph cliques_and_ind)
+
+let rec process graph =
+  if VSet.cardinal graph.nodes = 1 then graph else
+  let condensed_graph = condense_cliques graph in
+  let min_cond = condensible_subgraphs condensed_graph in
+  if VSetSet.is_empty min_cond then
+    condensed_graph
+  else
+    let prime_list = 
+      VSetSet.fold 
+        (fun vset -> 
+          let subgraph = induced_subgraph condensed_graph vset in
+          List.cons ((Prime (vmap_to_imap subgraph.edges)), vset))
+        min_cond
+        []
+    in
+    let prime_condensed_graph =
+      List.fold_left 
+        (fun graph (node, h) -> condense_prime graph node h)
+        condensed_graph
+        prime_list 
+    in
+    process prime_condensed_graph
