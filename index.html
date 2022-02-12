@@ -1,0 +1,92 @@
+<!doctype html>
+
+<html>
+
+<head>
+    <title>Tutorial 1: Getting Started</title>
+    <script src="cytoscape.js"></script>
+</head>
+
+<style>
+    #cy {
+        width: 600px;
+        height: 600px;
+        position: relative;
+        top: 0px;
+        left: 0px;
+        background-color: lightgrey;
+    }
+</style>
+
+<body>
+    <div id="cy"></div>
+    <button type="button" onclick="cy.layout({name: 'cose', animate: false, fit: false}).run(); cy.center()">
+      Clean layout
+    </button>
+    <script>
+      var mousePosition = {x:0, y:0};
+      document.addEventListener('mousemove', function(mouseMoveEvent){
+      mousePosition.x = mouseMoveEvent.pageX;
+      mousePosition.y = mouseMoveEvent.pageY;
+      }, false);
+
+      var cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: [
+          // nodes
+          {
+            data: 
+            { 
+              id: 'a',
+              label: 'a',
+              polarisation: true,
+            }
+          },
+          { 
+            data: 
+            { 
+              id: 'b',
+              label: 'b',
+              polarisation: false,
+            }
+         },
+        ],
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'background-color': 'white',
+              'border-color': 'black',
+              'border-width': '1px',
+              'label': 'data(label)'
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': '1px',
+              'line-color': 'black',
+            }
+          }]    
+        });
+
+      document.onkeypress = function(evt) {
+        evt = evt || window.event;
+        var charCode = evt.keyCode || evt.which;
+        var charStr = String.fromCharCode(charCode);
+        cy.add({
+          group: 'nodes',
+          data: {
+            label: charStr,
+          },
+          renderedPosition: {
+            x : mousePosition.x,
+            y: mousePosition.y,
+          }
+        });
+      };
+
+    </script>
+</body>
+
+</html>
