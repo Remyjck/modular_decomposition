@@ -21,11 +21,11 @@
 
 <body>
     <div id="cy"></div>
-    <button type="button" onclick="cy.layout({name: 'cose', animate: false, fit: false}).run(); cy.center()">
-      Clean layout
-    </button>
     <script src="code.js"></script>
+    <button type="button" onclick="cleanLayout()">Clean Layout</button>
     <button type="button" onclick="undo()">Undo</button>
+    <button type="button" id="download" onclick="exportGraph()">Download Graph</button>
+    <button type="button" onclick="clearGraph()">Clear Graph</button>
 </body>
 
 </html>

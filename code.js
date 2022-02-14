@@ -12,14 +12,14 @@ let cy = cytoscape({
     elements: [
     {
         data: { 
-            id: 'a',
+            id: '1',
             label: 'a',
             polarisation: true,
         }
     },
     { 
         data: { 
-            id: 'b',
+            id: '2',
             label: 'b',
             polarisation: false,
         }
@@ -58,6 +58,13 @@ let cy = cytoscape({
     }]    
 });
 
+let total_nodes = cy.nodes().length;
+
+function freshID() {
+    total_nodes += 1;
+    return total_nodes.toString();
+}
+
 function isAlphaNumeric(string) {
     return string.length == 1 && (/^[a-zA-Z0-9]/).test(string)
 };
@@ -74,11 +81,11 @@ cy_div.addEventListener("mouseover", function(evt){
 document.addEventListener('keyup', function(evt) {
     evt = evt || window.event;
     const string = evt.key;
-    console.log(string);
     if (isAlphaNumeric(string) && isMouseOver) {
         const node = {
             group: 'nodes',
             data: {
+                id: freshID(),
                 label: string,
                 polarisation: true,
             },
@@ -90,10 +97,8 @@ document.addEventListener('keyup', function(evt) {
     }
 
     if (string == "Backspace") {
-        const selected = cy.elements(':selected');
-        const edges = selected.connectedEdges();
-        cy.remove(selected);
-        changes.push(["remove", selected.union(edges)]);
+        const removed = cy.elements(':selected').remove();
+        changes.push(["remove", removed]);
     }
 });
 
@@ -141,6 +146,15 @@ cy.on('click', "node", function(evt){
     };
 });
 
+function cleanLayout() {
+    cy.layout({
+        name: 'cose',
+        animate: false,
+        fit: false,
+    }).run();
+    cy.center();
+};
+
 function undo() {
     if (changes.length == 0) {return};
     const [change, eles, ...rest] = changes.pop();
@@ -152,4 +166,36 @@ function undo() {
         eles.restore();
         return;
     }
+};
+
+function serialize() {
+    const nodes = cy.nodes(':inside').jsons();
+    const nodeData = nodes.map(node => { return {
+        id: parseInt(node['data']['id'], 10),
+        label: node['data']['label'],
+        polarisation: node['data']['polarisation']
+    }});
+    const edges = cy.edges(':inside').jsons();
+    const edgeData = edges.map(edge => {return {
+        source: edge['data']['source'],
+        target: edge['data']['target']
+    }});
+    return {
+        nodes: nodeData,
+        edges: edgeData
+    }
+}
+
+function exportGraph() {
+    const a = document.createElement("a");
+    const data = serialize();
+    const file = new Blob([JSON.stringify(data, null, 2)], {type: "text/plain"});
+    a.href = URL.createObjectURL(file);
+    a.download = "graph.json";
+    a.click();
+}
+
+function clearGraph() {
+    const removed = cy.elements().remove();
+    changes.push(["remove", removed]);
 }
