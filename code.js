@@ -84,15 +84,16 @@ document.addEventListener('keyup', function(evt) {
             },
             renderedPosition: {x : mousePosition.x, y: mousePosition.y,}
         };
-        cy.add(node);
-        changes.push(["add", node]);
+        const added = cy.add(node);
+        changes.push(["add", added]);
         return;
     }
 
     if (string == "Backspace") {
         const selected = cy.elements(':selected');
+        const edges = selected.connectedEdges();
         cy.remove(selected);
-        changes.push(["remove", selected]);
+        changes.push(["remove", selected.union(edges)]);
     }
 });
 
@@ -124,8 +125,8 @@ function addEdges(node, selected) {
             }
         })
     }
-    cy.add(to_add);
-    changes.push(["add", to_add]);
+    const added = cy.add(to_add);
+    changes.push(["add", added]);
 };
 
 cy.on('click', "node", function(evt){
@@ -142,16 +143,13 @@ cy.on('click', "node", function(evt){
 
 function undo() {
     if (changes.length == 0) {return};
-    const operation = changes.pop();
-    console.log(operation);
-    if (operation[0] == "add") {
-        let eles = operation[1];
-        console.log(eles);
-        cy.remove();
+    const [change, eles, ...rest] = changes.pop();
+    if (change == "add") {
+        eles.remove();
         return;
     }
-    if (operation[0] == "remove") {
-        cy.add(operation[1]);
+    if (change == "remove") {
+        eles.restore();
         return;
     }
 }
