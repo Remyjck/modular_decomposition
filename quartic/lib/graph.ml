@@ -40,6 +40,38 @@ let fresh_id =
   total_vertices := !total_vertices + 1;
   !total_vertices - 1
 
+(** [add_vertex vertex graph]: remove [vertex] from [graph] in both the nodes and edges *)
+let add_vertex vertex graph =
+  {nodes = VSet.add vertex graph.nodes; edges = graph.edges}
+
+(** [remove_vertex vertex edges]: given a mapping [edges], remove [vertex] from its keys and values  *)
+let remove_vertex v edges =
+  VMap.filter (fun vi _ -> not (vi = v)) edges
+  |> VMap.map (VSet.remove v)
+
+(** [connect_vertices vertices vertex graph]: for a given [graph],
+    add [vertex] to the neighbourhoods of all vertices in [vertices]*)
+let connect_vertices vertices vertex graph =
+  let updated_vertex_neighbours = 
+    VMap.update vertex
+      (fun vset ->
+        match vset with
+        | None -> raise Not_found
+        | Some vset -> (Some (VSet.union vset vertices)))
+      graph.edges
+  in
+  let updated_vertices_neighbours =
+    VSet.fold 
+      (fun v ->
+        VMap.update v (fun vset ->
+          match vset with
+          | None -> raise Not_found
+          | Some vset -> Some(VSet.add vertex vset)))
+      vertices
+      updated_vertex_neighbours
+  in
+  {nodes = graph.nodes; edges = updated_vertices_neighbours}
+
 (** [<~> graph vertices]: subgraph of [graph] that contains all vertices not in [vertices] *)
 let (<~>) graph vertices =
   let nodes = VSet.diff graph.nodes vertices in
@@ -70,10 +102,6 @@ let is_module g h =
   let connected = VSet.choose h |> w g h in
   VSet.for_all (fun v -> connected = w g h v)
 
-(** [remove_vertex vertex edges]: given a mapping [edges], remove [vertex] from its keys and values  *)
-let remove_vertex v edges =
-  VMap.filter (fun vi _ -> not (vi = v)) edges
-  |> VMap.map (VSet.remove v)
 
 (** [edge_tuple_list edges]: given a mapping [edges], return a corresponding list of edges (non-repeating) *)
 let rec edge_tuple_list edge_map =
@@ -122,6 +150,8 @@ end
 
 module Subsetset = Set.Make(Subset)
 
+(** [update_subset subset v1 succ(v1) v2 succ(v2)]: add [v2] to [subset]
+    if it belongs to the same subset as [v1] *)
 let update_subset subset vi vi_neighbours vj vj_neighbours =
   match subset with
   | IndSet set -> 
@@ -173,11 +203,7 @@ let cc_and_is g =
   in
   iterate_i 1 (Subsetset.empty)
 
-type connective =
-  | ParCon
-  | TensorCon
-  | PrimeCon
-
+(** [replace graph vertices vertex]: replace all vertices in [vertices] by [vertex] in [graph] *)
 let replace graph h vertex =
   let new_nodes = VSet.diff graph.nodes h |> VSet.add vertex in
   let new_edges =
@@ -202,6 +228,7 @@ let vmap_to_imap map =
     map
     IMap.empty
 
+(** [subset_set_to_nodes subsetset]: given a set of subsets, convert each subset to a [node] and return them in a list *)
 let subset_set_to_nodes subsetset =
   Subsetset.fold
     (fun ss -> 
@@ -214,11 +241,8 @@ let subset_set_to_nodes subsetset =
     subsetset
     []
 
-  (* | PrimeCon -> 
-    let subgraph = induced_subgraph graph h in
-    Prime (vmap_to_imap subgraph.edges) *)
-
-let condense_subset graph subset =
+(** [condense_subset subset graph]: given [subset], condense its vertices into a fresh vertex in [graph] *)
+let condense_subset subset graph =
   let h, node = 
     match subset with
     | Clique set -> set, Tensor (vset_to_iset set)
@@ -232,7 +256,8 @@ let condense_subset graph subset =
   in
   replace graph h new_vertex
 
-let condense_prime graph node vertices =
+(** [condense_prime node vertices graph]: given a prime [node] and it's corresponding [vertices], condense vertices into a fresh vertex *)
+let condense_prime node vertices graph =
   let new_vertex =
     {
       connective = node;
@@ -275,18 +300,20 @@ let condensible_subgraphs graph =
   let to_delete = List.concat_map to_delete v in
   VSetSet.diff (VSetSet.of_list h) (VSetSet.of_list to_delete)
     
-let condense_set graph subsets =
+(** [condense_set subsets graph]: given a set of disjoint subsets, condense them all in [graph] *)
+let condense_set subsets graph =
   Subsetset.fold
-    (fun ss -> Util.flip condense_subset ss)
+    (fun ss -> condense_subset ss)
     subsets
     graph
 
+(** [condense_cliques graph]: condense all of the condensible maximal cliques and independent sets in [graph] into fresh vertices *)
 let rec condense_cliques graph =
   let cliques_and_ind = cc_and_is graph in
   if Subsetset.is_empty cliques_and_ind then
     graph
   else
-    condense_cliques (condense_set graph cliques_and_ind)
+    condense_cliques (condense_set cliques_and_ind graph)
 
 let rec process graph =
   if VSet.cardinal graph.nodes = 1 then graph else
@@ -305,7 +332,7 @@ let rec process graph =
     in
     let prime_condensed_graph =
       List.fold_left 
-        (fun graph (node, h) -> condense_prime graph node h)
+        (fun graph (node, h) -> condense_prime node h graph)
         condensed_graph
         prime_list 
     in
