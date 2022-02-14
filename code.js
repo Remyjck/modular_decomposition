@@ -82,6 +82,7 @@ document.addEventListener('keyup', function(evt) {
     evt = evt || window.event;
     const string = evt.key;
     if (isAlphaNumeric(string) && isMouseOver) {
+        const offsets = document.getElementById('cy').getBoundingClientRect();
         const node = {
             group: 'nodes',
             data: {
@@ -89,7 +90,7 @@ document.addEventListener('keyup', function(evt) {
                 label: string,
                 polarisation: true,
             },
-            renderedPosition: {x : mousePosition.x, y: mousePosition.y,}
+            renderedPosition: {x : mousePosition.x + offsets.left - 13, y: mousePosition.y - offsets.top + 9,}
         };
         const added = cy.add(node);
         changes.push(["add", added]);
