@@ -1,2 +1,3 @@
 (library
- (name quartic))
+ (name quartic)
+ (libraries yojson))

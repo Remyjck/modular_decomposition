@@ -90,7 +90,10 @@ document.addEventListener('keyup', function(evt) {
                 label: string,
                 polarisation: true,
             },
-            renderedPosition: {x : mousePosition.x + offsets.left - 13, y: mousePosition.y - offsets.top + 9,}
+            renderedPosition: {
+                x : mousePosition.x + offsets.left - 13,
+                y: mousePosition.y - offsets.top + 9,
+            }
         };
         const added = cy.add(node);
         changes.push(["add", added]);
@@ -178,8 +181,8 @@ function serialize() {
     }});
     const edges = cy.edges(':inside').jsons();
     const edgeData = edges.map(edge => {return {
-        source: edge['data']['source'],
-        target: edge['data']['target']
+        source: parseInt(edge['data']['source'], 10),
+        target: parseInt(edge['data']['target'])
     }});
     return {
         nodes: nodeData,
