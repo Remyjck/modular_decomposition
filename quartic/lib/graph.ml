@@ -1,7 +1,7 @@
 
 type atom = 
   {
-    var : int;
+    label : string;
     pol : bool;
   }
 
@@ -113,6 +113,23 @@ let rec edge_tuple_list edge_map =
     if VSet.is_empty vi_neighbours then edge_tuple_list new_edge_map else
     let new_edges = VSet.fold (fun vj -> List.cons (vi, vj)) vi_neighbours [] in
     new_edges @ edge_tuple_list new_edge_map
+
+let add_or_init new_elem y = 
+  match y with
+  | None -> Some (VSet.singleton new_elem)
+  | Some z -> Some (VSet.add new_elem z)
+
+(** [edge_map edge_tuple_list]: given a list of edges [edge_tuple_list], return a corresponding mapping *)
+let edge_map edge_tuple_list =
+  let rec edge_list_to_map edges map = 
+    match edges with
+    | [] -> map
+    | (x, y) :: t -> 
+      let map1 = VMap.update x (add_or_init y) map in
+      let map2 = VMap.update y (add_or_init y) map1 in
+      edge_list_to_map t map2
+  in
+  edge_list_to_map edge_tuple_list VMap.empty
 
 (** [smallest_condensible graph set]: returns the smallest condensible set containing all vertices of [set] *)
 let smallest_condensible g v =
@@ -227,6 +244,10 @@ let vmap_to_imap map =
     (fun k v -> IMap.add k.id (vset_to_iset v))
     map
     IMap.empty
+
+(** [id_map vset]: returns a map from the [id]s of the elements of [vset] to the elements themselves *)
+let id_map vset =
+  VSet.fold (fun vertex -> IMap.add vertex.id vertex) vset IMap.empty
 
 (** [subset_set_to_nodes subsetset]: given a set of subsets, convert each subset to a [node] and return them in a list *)
 let subset_set_to_nodes subsetset =
