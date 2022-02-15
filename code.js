@@ -9,21 +9,7 @@ let changes = [];
 let cy = cytoscape({
     container: document.getElementById('cy'),
     wheelSensitivity: 0.2,
-    elements: [
-    {
-        data: { 
-            id: '1',
-            label: 'a',
-            polarisation: true,
-        }
-    },
-    { 
-        data: { 
-            id: '2',
-            label: 'b',
-            polarisation: false,
-        }
-    }],
+    elements: [ { data: { id: '1', label: '1', polarisation: true, } }, { data: { id: '2', label: '2', polarisation: true, } }, { data: { id: '3', label: '3', polarisation: true, } }, { data: { id: '4', label: '4', polarisation: true, } }, { data: { id: '5', label: '5', polarisation: true, } }, { data: { id: '6', label: '6', polarisation: true, } }, { data: { id: '7', label: '7', polarisation: true, } }, { data: { id: '8', label: '8', polarisation: true, } }, { data: { source: '1', target: '2', } }, { data: { source: '1', target: '8', } }, { data: { source: '1', target: '3', } }, { data: { source: '2', target: '8', } }, { data: { source: '2', target: '3', } }, { data: { source: '3', target: '4', } }, { data: { source: '3', target: '5', } }, { data: { source: '4', target: '7', } }, { data: { source: '4', target: '8', } }, { data: { source: '5', target: '7', } }, { data: { source: '5', target: '8', } }, { data: { source: '6', target: '3', } }, { data: { source: '6', target: '7', } }, { data: { source: '6', target: '8', } }, { data: { source: '7', target: '8', } }],
     style: [
     {
         selector: 'node',
