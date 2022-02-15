@@ -164,10 +164,17 @@ function undo() {
     const [change, eles, ...rest] = changes.pop();
     if (change == "add") {
         eles.remove();
+        cleanLayout();
         return;
     }
     if (change == "remove") {
         eles.restore();
+        cleanLayout();
+        return;
+    }
+    if (change == "replace") {
+        eles.remove();
+        undo();
         return;
     }
 };
@@ -203,3 +210,32 @@ function clearGraph() {
     const removed = cy.elements().remove();
     changes.push(["remove", removed]);
 }
+
+function onChange(event) {
+    let reader = new FileReader();
+    reader.onload = onReaderLoad;
+    reader.readAsText(event.target.files[0]);
+
+}
+
+function onReaderLoad(event) {
+    const obj = JSON.parse(event.target.result);
+    const nodes = obj['nodes'];
+    const nodes_obj = nodes.map(node => {
+        return {group: 'nodes', data: node}
+    });
+    const edges = obj['edges'];
+    const edges_obj = edges.map(edge => {
+        return {group: 'edges', data: edge}
+    });
+    clearGraph();
+    const added_nodes = cy.add(nodes_obj);
+    const added_edges = cy.add(edges_obj);
+    const eles = added_nodes.union(added_edges);
+    changes.push(["replace", eles]);
+    cleanLayout();
+}
+
+document.addEventListener("DOMContentLoaded", function(event) {
+    document.getElementById('upload').addEventListener('change', onChange);
+});
