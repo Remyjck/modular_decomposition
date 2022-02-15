@@ -1,6 +1,4 @@
-
-type atom = 
-  {
+type atom = {
     label : string;
     pol : bool;
   }
@@ -14,8 +12,7 @@ type node =
   | Par of ISet.t
   | Prime of ISet.t IMap.t
 
-type vertex = 
-  {
+type vertex = {
     connective : node;
     id : int;
   }
@@ -28,17 +25,21 @@ end
 module VMap = Map.Make(Vertex)
 module VSet = Set.Make(Vertex)
 
-type graph =
-  {
+type graph = {
     nodes : VSet.t;
     edges : VSet.t VMap.t;
   }
 
-let total_vertices = ref 0
+type state = {
+  mutable total_vertices : int;
+  id_map : vertex IMap.t; (* Make Hashmap *)
+}
+
+let state = {total_vertices = 0; id_map = IMap.empty}
 
 let fresh_id = 
-  total_vertices := !total_vertices + 1;
-  !total_vertices - 1
+  state.total_vertices <- state.total_vertices + 1;
+  state.total_vertices
 
 (** [add_vertex vertex graph]: remove [vertex] from [graph] in both the nodes and edges *)
 let add_vertex vertex graph =

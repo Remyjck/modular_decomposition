@@ -18,6 +18,7 @@ end
 
 module Subsetset = Set.Make(Subset)
 
+(* Algorithm 2.2 *)
 (** [smallest_condensible graph set]: returns the smallest condensible set containing all vertices of [set] *)
 let smallest_condensible g v =
   let vl = VSet.elements v in
@@ -65,6 +66,7 @@ let update_subsetset subsetset new_subset =
     else 
       (Subsetset.add new_subset subsetset)
 
+(* Algorithm 3.5 *)
 (** [cc_and_is graph]: returns the set of maximal condensible cliques and independent set of [graph] *)
 let cc_and_is g =
   let len_v = (VSet.cardinal g.nodes) in
@@ -93,6 +95,7 @@ let cc_and_is g =
 
 (** [replace graph vertices vertex]: replace all vertices in [vertices] by [vertex] in [graph] *)
 let replace graph h vertex =
+  (* Add h to graph state hashmap *)
   let new_nodes = VSet.diff graph.nodes h |> VSet.add vertex in
   let new_edges =
     VMap.filter (fun v _ -> not (VSet.mem v h)) graph.edges
@@ -142,7 +145,8 @@ let condense_prime node vertices graph =
   in 
   replace graph vertices new_vertex
 
-(** [condensible_subgraphs graph]: corresponds to algorithm 3.6 of the paper *)
+(* Algorithm 3.6 *)
+(** [condensible_subgraphs graph]: returns the minimal condensible subgraphs of [graph]*)
 let condensible_subgraphs graph =
   let v = VSet.elements graph.nodes in
   let edges = vertex_neighbour_pairs v graph.edges in
@@ -181,6 +185,7 @@ let rec condense_cliques graph =
   else
     condense_cliques (condense_set cliques_and_ind graph)
 
+(* Algorithm 3.4 *)
 let rec process graph =
   if VSet.cardinal graph.nodes = 1 then graph else
   let condensed_graph = condense_cliques graph in
