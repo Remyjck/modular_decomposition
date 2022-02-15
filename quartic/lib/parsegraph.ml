@@ -44,8 +44,8 @@ let from_vertex vertex =
     | _ -> failwith "Tried to serialize non-atomic graph"
     in
     `Assoc [
-      ("id", id),
-      ("label", label),
+      ("id", id);
+      ("label", label);
       ("polarisation", pol)
     ]
 
@@ -58,7 +58,7 @@ let from_id_tuple (id1, id2) =
   let source = `Int id1 in
   let target = `Int id2 in
   `Assoc [
-    ("source", source),
+    ("source", source);
     ("target", target)
   ]
 
@@ -76,6 +76,67 @@ let serialize_graph graph =
   let nodes = from_nodes graph.nodes in
   let edges = from_edges graph.edges in
   `Assoc [
-    ("nodes", nodes),
+    ("nodes", nodes);
     ("edges", edges)
+  ]
+
+let from_connective connective =
+  match connective with
+  | Tree.Atom _ -> `String "atom", None
+  | Tree.Tensor _ -> `String "tensor", None
+  | Tree.Par _ -> `String "par", None
+  | Tree.Prime (id_graph, _) -> `String "prime", Some id_graph
+
+let from_id_graph (id_graph : Tree.id_graph) =
+  let nodes = List.map (fun n -> `Int n) id_graph.nodes in
+  let nodes_json = `List nodes in
+  let edges = List.map 
+    (fun (n1,n2) -> `Assoc [("source", `Int n1); ("target", `Int n2)])
+    id_graph.edges
+  in
+  let edges_json = `List edges in
+  `Assoc [("nodes", nodes_json), ("edges", edges_json)]
+
+let rec serialized_nodes_and_edges (tree : Tree.tree) =
+  let connective, id_graph = from_connective tree.connective in
+  let id = `Int tree.id in
+  let successors = Tree.successors tree in
+  let node_base = [("connective", connective); ("id", id)] in
+  let new_node = 
+    match id_graph with
+      | None -> `Assoc node_base
+      | Some id_graph -> `Assoc (
+        ("graph", (from_id_graph id_graph)) :: node_base)
+  in
+  match successors with
+  | [] ->  ([new_node], [])
+  | l -> 
+    let nodes, edges = List.map serialized_nodes_and_edges l |> List.split in
+    let node = new_node :: (List.concat nodes) in
+    let new_edges = 
+      List.map (fun (t : Tree.tree) ->
+        `Assoc [("source", id); ("target", `Int t.id)])
+        successors in
+    let edge = new_edges @ List.concat edges in
+    node, edge
+
+let serialize_tree_as_graph (tree : Tree.tree) =
+  let nodes, edges = serialized_nodes_and_edges tree in
+  let json_nodes = `List nodes in
+  let json_edges = `List edges in
+  `Assoc [("nodes", json_nodes); ("edges", json_edges)]
+
+let rec serialize_tree (tree : Tree.tree) =
+  let id = `Int tree.id in
+  let connective, id_graph = from_connective tree.connective in
+  let node_base = [("connective", connective); ("id", id)] in
+  let node =
+    match id_graph with
+    | None -> `Assoc node_base
+    | Some graph -> `Assoc (("graph", from_id_graph graph) :: node_base)
+  in
+  let successors = List.map serialize_tree (Tree.successors tree) in
+  `Assoc [
+    ("node", node);
+    ("successors", `List successors)
   ]
