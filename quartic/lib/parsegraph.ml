@@ -34,3 +34,48 @@ let parse js_obj =
   let edge_list = to_edge_list id_list nodes in
   let edges = edge_map edge_list in
   {nodes=nodes; edges=edges}
+
+let from_vertex vertex =
+  let id = `Int vertex.id in
+  let label, pol = 
+    match vertex.connective with
+    | Atom atom ->
+      (`String atom.label, `Bool atom.pol)
+    | _ -> failwith "Tried to serialize non-atomic graph"
+    in
+    `Assoc [
+      ("id", id),
+      ("label", label),
+      ("polarisation", pol)
+    ]
+
+let from_nodes vset =
+  let node_list = VSet.elements vset in
+  let json_list = List.map from_vertex node_list in
+  `List json_list
+
+let from_id_tuple (id1, id2) =
+  let source = `Int id1 in
+  let target = `Int id2 in
+  `Assoc [
+    ("source", source),
+    ("target", target)
+  ]
+
+let from_edges edge_map =
+  let edge_list = edge_tuple_list edge_map in
+  let id_list = 
+    List.map
+      (fun (v1, v2) -> (v1.id, v2.id))
+      edge_list
+  in
+  let json_list = List.map from_id_tuple id_list in
+  `List json_list
+
+let serialize_graph graph =
+  let nodes = from_nodes graph.nodes in
+  let edges = from_edges graph.edges in
+  `Assoc [
+    ("nodes", nodes),
+    ("edges", edges)
+  ]
