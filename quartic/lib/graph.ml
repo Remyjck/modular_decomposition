@@ -7,7 +7,7 @@ type atom = {
   [@@deriving compare, sexp, hash]
 
 module ISet = struct
-  type t = Core.Set.M(Int).t [@@deriving compare, sexp, hash]
+  type t = Set.M(Int).t [@@deriving compare, sexp, hash]
 end
 include Comparable.Make(ISet)
 include Hashable.Make(ISet)
@@ -59,11 +59,13 @@ let add_vertices_to_hash vertices =
   VSet.iter vertices
   ~f:(fun v -> Hashtbl.add_exn state.id_map ~key:v.id ~data:v)
 
-(** [add_vertex vertex graph]: remove [vertex] from [graph] in both the nodes and edges *)
+(** [add_vertex vertex graph]: remove [vertex] from [graph] in both the nodes 
+    and edges *)
 let add_vertex vertex graph =
   {nodes = VSet.add graph.nodes vertex; edges = graph.edges}
 
-(** [remove_vertex vertex edges]: given a mapping [edges], remove [vertex] from its keys and values  *)
+(** [remove_vertex vertex edges]: given a mapping [edges], remove [vertex] from 
+    its keys and values  *)
 let remove_vertex v edges =
   VMap.remove edges v |> VMap.map ~f:(Util.flip VSet.remove v)
 
@@ -71,7 +73,8 @@ let disjoint s1 s2 =
   let diff = VSet.diff s1 s2 in (* O(l1 + l2) *)
   VSet.equal s1 diff (* O(l1 + l2) *)
 
-(** [replace graph vertices vertex]: replace all vertices in [vertices] by [vertex] in [graph] *)
+(** [replace graph vertices vertex]: replace all vertices in [vertices] by 
+    [vertex] in [graph] *)
 let replace graph h vertex =
   let () = add_vertices_to_hash h in
   let new_nodes = VSet.diff graph.nodes h |> Util.flip VSet.add vertex in
@@ -113,7 +116,8 @@ let connect_vertices vertices vertex graph =
   in
   {nodes = graph.nodes; edges = updated_vertices_neighbours}
 
-(** [<~> graph vertices]: subgraph of [graph] that contains all vertices not in [vertices] *)
+(** [<~> graph vertices]: subgraph of [graph] that contains all vertices not in 
+    [vertices] *)
 let (<~>) graph vertices =
   let nodes = VSet.diff graph.nodes vertices in
   let edges =
@@ -122,7 +126,8 @@ let (<~>) graph vertices =
   in
   {nodes = nodes; edges = edges}
 
-(** [induced_subgraph graph vertices]: subgraph of [graph] that contains only the vertices in [vertices]  *)
+(** [induced_subgraph graph vertices]: subgraph of [graph] that contains only 
+    the vertices in [vertices]  *)
 let induced_subgraph graph vertices =
   let edges = 
     VMap.filter_keys graph.edges ~f:(fun v -> VSet.mem vertices v)
@@ -130,7 +135,8 @@ let induced_subgraph graph vertices =
   in
   {nodes = vertices; edges = edges}
 
-(** [connected graph vertices]: set of vertices to which [vertices] is connected *)
+(** [connected graph vertices]: set of vertices to which [vertices] is 
+    connected *)
 let connected graph vertices =
     Set.fold vertices
       ~init:VSet.empty
@@ -146,7 +152,8 @@ let is_module g h =
   let connected = VSet.choose_exn h |> w g h in
   Set.for_all ~f:(fun v -> VSet.equal connected (w g h v))
 
-(** [edge_tuple_list edges]: given a mapping [edges], return a corresponding list of edges (non-repeating) *)
+(** [edge_tuple_list edges]: given a mapping [edges], return a corresponding 
+    list of edges (non-repeating) *)
 let rec edge_tuple_list edge_map =
   if VMap.is_empty edge_map then
     []
@@ -163,7 +170,8 @@ let add_or_init new_elem y =
   | None -> VSet.singleton new_elem
   | Some z -> VSet.add z new_elem
 
-(** [edge_map edge_tuple_list]: given a list of edges [edge_tuple_list], return a corresponding mapping *)
+(** [edge_map edge_tuple_list]: given a list of edges [edge_tuple_list], 
+    return a corresponding mapping *)
 let edge_map edge_tuple_list =
   let rec edge_list_to_map edges map = 
     match edges with
@@ -192,7 +200,8 @@ let vmap_to_imap map =
       let data = vset_to_iset v in
       Core.Map.add_exn accum ~key:k.id ~data:data)
 
-(** [id_map vset]: returns a map from the [id]s of the elements of [vset] to the elements themselves *)
+(** [id_map vset]: returns a map from the [id]s of the elements of [vset] to 
+    the elements themselves *)
 let id_map vset =
   VSet.fold vset
     ~init:(Core.Map.empty (module Int)) 

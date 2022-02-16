@@ -16,7 +16,8 @@ end
 module Subsetset = Set.Make(Subset)
 
 (* Algorithm 2.2 *)
-(** [smallest_condensible graph set]: returns the smallest condensible set containing all vertices of [set] *)
+(** [smallest_condensible graph set]: returns the smallest condensible set 
+    containing all vertices of [set] *)
 let smallest_condensible g v =
   let vl = VSet.elements v in
   let rec smallest_condesible wl i b =
@@ -53,7 +54,8 @@ let update_subset subset vi vi_neighbours vj vj_neighbours =
     else
       subset
 
-(** [update_subsetset subsetset new_subset]: given a set of subsets [subsetset], update it by adding [new_subset] *)
+(** [update_subsetset subsetset new_subset]: given a set of subsets [subsetset],
+    update it by adding [new_subset] *)
 let update_subsetset subsetset new_subset =
   match new_subset with
   | IndSet _ -> Subsetset.add subsetset new_subset
@@ -64,7 +66,8 @@ let update_subsetset subsetset new_subset =
       (Subsetset.add subsetset new_subset)
 
 (* Algorithm 3.5 *)
-(** [cc_and_is graph]: returns the set of maximal condensible cliques and independent set of [graph] *)
+(** [cc_and_is graph]: returns the set of maximal condensible cliques and 
+    independent set of [graph] *)
 let cc_and_is g =
   let len_v = (Set.length g.nodes) in
   let v = VSet.elements g.nodes in
@@ -90,7 +93,8 @@ let cc_and_is g =
   in
   iterate_i 1 (Subsetset.empty)
 
-(** [subset_set_to_nodes subsetset]: given a set of subsets, convert each subset to a [node] and return them in a list *)
+(** [subset_set_to_nodes subsetset]: given a set of subsets, convert each subset
+    to a [node] and return them in a list *)
 let subset_set_to_nodes subsetset =
   Subsetset.fold subsetset
     ~init:[]
@@ -102,7 +106,8 @@ let subset_set_to_nodes subsetset =
       in
       node :: accum)
 
-(** [condense_subset subset graph]: given [subset], condense its vertices into a fresh vertex in [graph] *)
+(** [condense_subset subset graph]: given [subset], condense its vertices into a
+    fresh vertex in [graph] *)
 let condense_subset subset graph =
   let h, node = 
     match subset with
@@ -117,7 +122,8 @@ let condense_subset subset graph =
   in
   replace graph h new_vertex
 
-(** [condense_prime node vertices graph]: given a prime [node] and it's corresponding [vertices], condense vertices into a fresh vertex *)
+(** [condense_prime node vertices graph]: given a prime [node] and it's 
+    corresponding [vertices], condense vertices into a fresh vertex *)
 let condense_prime node vertices graph =
   let new_vertex =
     {
@@ -128,7 +134,8 @@ let condense_prime node vertices graph =
   replace graph vertices new_vertex
 
 (* Algorithm 3.6 *)
-(** [condensible_subgraphs graph]: returns the minimal condensible subgraphs of [graph]*)
+(** [condensible_subgraphs graph]: returns the minimal condensible subgraphs of 
+    [graph]*)
 let condensible_subgraphs graph =
   let v = VSet.elements graph.nodes in
   let edges = vertex_neighbour_pairs v graph.edges in
@@ -151,13 +158,15 @@ let condensible_subgraphs graph =
   let to_delete = List.concat_map v ~f:to_delete in
   VSetSet.diff (VSetSet.of_list h) (VSetSet.of_list to_delete)
     
-(** [condense_set subsets graph]: given a set of disjoint subsets, condense them all in [graph] *)
+(** [condense_set subsets graph]: given a set of disjoint subsets, condense them
+    all in [graph] *)
 let condense_set subsets graph =
   Subsetset.fold subsets
     ~init:graph
     ~f:(fun accum ss -> condense_subset ss accum)
 
-(** [condense_cliques graph]: condense all of the condensible maximal cliques and independent sets in [graph] into fresh vertices *)
+(** [condense_cliques graph]: condense all of the condensible maximal cliques 
+    and independent sets in [graph] into fresh vertices *)
 let rec condense_cliques graph =
   let cliques_and_ind = cc_and_is graph in
   if Subsetset.is_empty cliques_and_ind then
