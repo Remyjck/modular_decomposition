@@ -16,4 +16,4 @@ and tree = {
 
 val successors : tree -> tree list
 
-val tree_from_condensed : Graph.graph -> Graph.vertex Graph.IMap.t -> tree
+val tree_from_condensed : Graph.graph -> tree
