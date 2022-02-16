@@ -150,17 +150,16 @@ function undo() {
     const [change, eles, ...rest] = changes.pop();
     if (change == "add") {
         eles.remove();
-        cleanLayout();
         return;
     }
     if (change == "remove") {
         eles.restore();
-        cleanLayout();
         return;
     }
     if (change == "replace") {
         eles.remove();
         undo();
+        cleanLayout();
         return;
     }
 };
