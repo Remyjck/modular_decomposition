@@ -1,3 +1,5 @@
-(test
- (name quartic)
+(library
+ (name test_graph)
+ (inline_tests)
+ (preprocess (pps ppx_inline_test))
  (libraries quartic))

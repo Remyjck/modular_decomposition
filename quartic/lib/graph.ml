@@ -7,7 +7,7 @@ type atom = {
   [@@deriving compare, sexp, hash]
 
 module ISet = struct
-  type t = Set.M(Int).t [@@deriving compare, sexp, hash]
+  type t = Core.Set.M(Int).t [@@deriving compare, sexp, hash]
 end
 include Comparable.Make(ISet)
 include Hashable.Make(ISet)
@@ -32,9 +32,12 @@ type vertex = {
   [@@deriving compare, sexp, hash]
 
 module Vertex = struct
-  type t = vertex [@@deriving compare, sexp, hash]
+  module T = struct
+    type t = vertex [@@deriving compare, sexp, hash]
+  end
+  include T
+  include Comparable.Make(T)
 end
-include Comparable.Make(Vertex)
 
 module VSet = Core.Set.Make(Vertex)
 module VMap = Core.Map.Make(Vertex)
@@ -49,15 +52,19 @@ type state = {
   id_map : (int, Vertex.t) Hashtbl.t;
 }
 
-let state = {total_vertices = 0; id_map = Hashtbl.create (module Int)}
-
-let fresh_id = 
+let fresh_id state = 
   state.total_vertices <- state.total_vertices + 1;
   state.total_vertices
 
-let add_vertices_to_hash vertices =
+let add_vertices_to_hash vertices state =
+  Printf.printf "Vertices:\n";
+  VSet.iter vertices ~f:(fun v -> Printf.printf "%d " v.id);
+  Printf.printf "\n";
   VSet.iter vertices
-  ~f:(fun v -> Hashtbl.add_exn state.id_map ~key:v.id ~data:v)
+  ~f:(fun v -> Hashtbl.add_exn state.id_map ~key:v.id ~data:v);
+  Printf.printf "Hashtable:\n";
+  Hashtbl.iter_keys state.id_map ~f:(fun k -> Printf.printf "%d " k);
+  Printf.printf "\n\n"
 
 (** [add_vertex vertex graph]: remove [vertex] from [graph] in both the nodes 
     and edges *)
@@ -66,55 +73,17 @@ let add_vertex vertex graph =
 
 (** [remove_vertex vertex edges]: given a mapping [edges], remove [vertex] from 
     its keys and values  *)
-let remove_vertex v edges =
+let remove_vertex_edges v edges =
   VMap.remove edges v |> VMap.map ~f:(Util.flip VSet.remove v)
+
+let remove_vertex v graph =
+  let new_nodes = VSet.remove graph.nodes v in
+  let new_edges = remove_vertex_edges v graph.edges in 
+  {nodes = new_nodes; edges = new_edges}
 
 let disjoint s1 s2 =
   let diff = VSet.diff s1 s2 in (* O(l1 + l2) *)
   VSet.equal s1 diff (* O(l1 + l2) *)
-
-(** [replace graph vertices vertex]: replace all vertices in [vertices] by 
-    [vertex] in [graph] *)
-let replace graph h vertex =
-  let () = add_vertices_to_hash h in
-  let new_nodes = VSet.diff graph.nodes h |> Util.flip VSet.add vertex in
-  let removed_keys =
-    VMap.filter_keys graph.edges ~f:(fun v -> not (VSet.mem h v))
-  in
-  let new_edges = 
-    VMap.map removed_keys 
-    ~f:(fun s -> 
-      if disjoint s h then
-        s
-      else
-        VSet.add s vertex |> Util.flip VSet.diff h)
-  in
-  {nodes = new_nodes; edges = new_edges}
-
-(** [connect_vertices vertices vertex graph]: for a given [graph],
-    add [vertex] to the neighbourhoods of all vertices in [vertices]*)
-let connect_vertices vertices vertex graph =
-  let updated_vertex_neighbours = 
-    VMap.update graph.edges vertex
-      ~f:(fun vset ->
-        match vset with
-        | None -> raise_s 
-          [%message "error" "Could not find vertex in edges while connecting vertices"]
-        | Some vset -> (VSet.union vset vertices))
-  in
-  let updated_vertices_neighbours =
-    VSet.fold 
-      vertices
-      ~init:updated_vertex_neighbours
-      ~f:(fun accum v ->
-        VMap.update accum v 
-          ~f:(fun vset ->
-            match vset with
-            | None -> raise_s 
-              [%message "error" "Could not find vertex in edges while connecting vertices"]
-            | Some vset -> VSet.add vset vertex))
-  in
-  {nodes = graph.nodes; edges = updated_vertices_neighbours}
 
 (** [<~> graph vertices]: subgraph of [graph] that contains all vertices not in 
     [vertices] *)
@@ -126,6 +95,67 @@ let (<~>) graph vertices =
   in
   {nodes = nodes; edges = edges}
 
+(** [connected graph vertices]: set of vertices to which [vertices] is 
+    connected *)
+let connected graph vertices =
+    VSet.fold vertices
+      ~init:VSet.empty
+      ~f:(fun accum v -> 
+        let to_add = 
+          match VMap.find graph.edges v with
+          | None -> VSet.empty
+          | Some vset -> vset
+        in
+        VSet.union accum to_add)
+    |> Util.flip VSet.diff vertices
+
+(** [replace graph vertices vertex]: replace all vertices in [vertices] by 
+    [vertex] in [graph] *)
+let replace graph h vertex state =
+  let () = assert(Core.Set.is_subset h ~of_:graph.nodes) in
+  let () = Printf.printf "Adding new vertex: %d\n" vertex.id in
+  let () = add_vertices_to_hash h state in
+  let new_neighbours = connected graph h in
+  let new_nodes = VSet.diff graph.nodes h |> Util.flip VSet.add vertex in
+  let removed_keys =
+    VMap.filter_keys graph.edges ~f:(fun v -> not (VSet.mem h v))
+  in
+  let removed_edges = 
+    VMap.map removed_keys 
+    ~f:(fun s -> 
+      if disjoint s h then
+        s
+      else
+        VSet.add s vertex |> Util.flip VSet.diff h)
+  in
+  let new_edges = VMap.add_exn removed_edges ~key:vertex ~data:new_neighbours in
+  {nodes = new_nodes; edges = new_edges}
+
+(** [connect_vertices vertices vertex graph]: for a given [graph],
+    add [vertex] to the neighbourhoods of all vertices in [vertices]*)
+let connect_vertices vertices vertex graph =
+  let () = assert(VSet.mem graph.nodes vertex) in
+  let () = assert(VSet.for_all vertices ~f:(VSet.mem graph.nodes)) in
+  let updated_vertex_neighbours = 
+    VMap.update graph.edges vertex
+      ~f:(fun vset ->
+        match vset with
+        | None -> vertices
+        | Some vset -> (VSet.union vset vertices))
+  in
+  let updated_vertices_neighbours =
+    VSet.fold 
+      vertices
+      ~init:updated_vertex_neighbours
+      ~f:(fun accum v ->
+        VMap.update accum v 
+          ~f:(fun vset ->
+            match vset with
+            | None -> VSet.singleton vertex
+            | Some vset -> VSet.add vset vertex))
+  in
+  {nodes = graph.nodes; edges = updated_vertices_neighbours}
+
 (** [induced_subgraph graph vertices]: subgraph of [graph] that contains only 
     the vertices in [vertices]  *)
 let induced_subgraph graph vertices =
@@ -135,22 +165,25 @@ let induced_subgraph graph vertices =
   in
   {nodes = vertices; edges = edges}
 
-(** [connected graph vertices]: set of vertices to which [vertices] is 
-    connected *)
-let connected graph vertices =
-    Set.fold vertices
-      ~init:VSet.empty
-      ~f:(fun accum v -> 
-        VMap.find_exn graph.edges v |> VSet.union accum)
-
 (** [w G H h]: set of vertices of [G <~> H] to which [h] is connected *)
 let w g h v =
-  VMap.find_exn (g <~> h).edges v
+  let new_h = VSet.remove h v in
+  match VMap.find (g <~> new_h).edges v with
+  | None -> VSet.empty
+  | Some vset -> vset
   
 (** [is_module G H]: checks if [H] is a module of [G] *)  
 let is_module g h =
-  let connected = VSet.choose_exn h |> w g h in
-  Set.for_all ~f:(fun v -> VSet.equal connected (w g h v))
+  let connected = 
+    match VSet.choose h with
+    | None -> VSet.empty
+    | Some v -> 
+    w g h v
+  in
+  VSet.for_all h 
+    ~f:(fun v -> 
+      let v_connected = w g h v in
+      VSet.equal connected v_connected)
 
 (** [edge_tuple_list edges]: given a mapping [edges], return a corresponding 
     list of edges (non-repeating) *)
@@ -159,16 +192,16 @@ let rec edge_tuple_list edge_map =
     []
   else
     let vi, vi_neighbours = VMap.min_elt_exn edge_map in
-    let new_edge_map = remove_vertex vi edge_map in
+    let new_edge_map = remove_vertex_edges vi edge_map in
     let new_edges = VSet.fold vi_neighbours
       ~init:[]
       ~f:(fun accum vj -> (vi, vj) :: accum) in
     new_edges @ edge_tuple_list new_edge_map
 
-let add_or_init new_elem y = 
-  match y with
-  | None -> VSet.singleton new_elem
-  | Some z -> VSet.add z new_elem
+let add_or_init v y = 
+  match v with
+  | None -> Some (VSet.singleton y)
+  | Some z -> Some (VSet.add z y)
 
 (** [edge_map edge_tuple_list]: given a list of edges [edge_tuple_list], 
     return a corresponding mapping *)
@@ -177,21 +210,17 @@ let edge_map edge_tuple_list =
     match edges with
     | [] -> map
     | (x, y) :: t -> 
-      let map1 = VMap.update map x ~f:(add_or_init y) in
-      let map2 = VMap.update map1 y ~f:(add_or_init y) in
+      let map1 = VMap.change map x ~f:(fun v -> add_or_init v y) in
+      let map2 = VMap.change map1 y ~f:(fun v -> add_or_init v x) in
       edge_list_to_map t map2
   in
   edge_list_to_map edge_tuple_list VMap.empty
 
 let vset_to_iset vset =
-  VSet.fold vset
-    ~init:(Core.Set.empty (module Int))
-    ~f:(fun accum v -> Core.Set.add accum v.id)
+  Core.Set.map (module Int) vset ~f:(fun v -> v.id)
 
 let iset_to_vset map iset =
-  VSet.fold iset
-    ~init:(Set.empty)
-    ~f:(fun accum i -> Set.add accum (Map.find_exn map i))
+  Core.Set.map (module Vertex) iset ~f:(fun i -> Map.find_exn map i)
 
 let vmap_to_imap map =
   VMap.fold map
@@ -208,9 +237,13 @@ let id_map vset =
     ~f:(fun accum vertex -> 
       Core.Map.add_exn accum ~key:vertex.id ~data:vertex)
 
+(** [vertex_neighbour_pairs vertices edge_map]: return an assoc list from every 
+    vertex to one of its neighbours *)
 let vertex_neighbour_pairs v edge_map =
   List.map v 
     ~f:(fun vi ->
       let vi_neighbours = VMap.find_exn edge_map vi in
-      let vj = VSet.choose_exn vi_neighbours in
-      VSet.of_list [vi; vj])
+      let vj = VSet.choose vi_neighbours in
+      match vj with
+      | None -> VSet.singleton vi
+      | Some vj -> VSet.of_list [vi; vj])

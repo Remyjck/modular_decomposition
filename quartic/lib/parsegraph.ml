@@ -14,26 +14,50 @@ let to_nodes js_obj =
   let vertex_list = List.map json_list ~f:to_vertex in
   VSet.of_list vertex_list
 
-let to_edge_tuple js_obj =
+let to_id_tuple js_obj =
   let src = js_obj |> member "source" |> to_int in
   let dest = js_obj |> member "target" |> to_int in
   (src, dest)
 
 let to_id_list js_obj =
-  to_list js_obj |> List.map ~f:to_edge_tuple
+  to_list js_obj |> List.map ~f:to_id_tuple
 
-let to_edge_list id_list nodes =
+let to_assoc_list id_list nodes =
   let map = id_map nodes in
   List.map id_list
     ~f:(fun (src, dest) ->
       (Map.find_exn map src, Map.find_exn map dest))
 
+let equal_int_tuple (t11, t12) (t21, t22) =
+  (t11 = t21 && t12 = t22)
+  ||
+  (t11 = t22 && t12 = t21)
+
+let to_edge_map nodes js_obj = 
+  let id_list = to_id_list js_obj in
+  let vertex_assoc = to_assoc_list id_list nodes in
+  let id_list2 = 
+    List.map vertex_assoc
+      ~f:(fun (src, dest) -> (src.id, dest.id))
+  in
+  let () = assert(List.equal equal_int_tuple id_list id_list2) in
+  let res = edge_map vertex_assoc in
+  let () = assert(List.for_all (Graph.edge_tuple_list res)
+    ~f:(fun (v1, v2) -> List.mem id_list (v1.id, v2.id) ~equal:equal_int_tuple))
+  in
+  res
+
 let parse js_obj =
   let nodes = js_obj |> member "nodes" |> to_nodes in
-  let id_list = js_obj |> member "edges" |> to_id_list in
-  let edge_list = to_edge_list id_list nodes in
-  let edges = edge_map edge_list in
-  {nodes=nodes; edges=edges}
+  let edges = js_obj |> member "edges" |> to_edge_map nodes in
+  let max_id = 
+    let ids = List.map (VSet.elements nodes) ~f:(fun v -> v.id) in
+    match List.max_elt ids ~compare:Int.compare with
+    | None -> 0
+    | Some n -> n 
+  in
+  ({nodes=nodes; edges=edges},
+   {total_vertices = max_id; id_map = Hashtbl.create (module Int)})
 
 let from_vertex vertex =
   let id = `Int vertex.id in

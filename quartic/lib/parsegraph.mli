@@ -1,4 +1,4 @@
-val parse : Yojson.Basic.t -> Graph.graph
+val parse : Yojson.Basic.t -> Graph.graph * Graph.state
 
 val serialize_graph : Graph.graph -> 
     [> `Assoc of

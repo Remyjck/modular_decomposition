@@ -18,25 +18,23 @@ module Subsetset = Set.Make(Subset)
 (* Algorithm 2.2 *)
 (** [smallest_condensible graph set]: returns the smallest condensible set 
     containing all vertices of [set] *)
-let smallest_condensible g v =
-  let vl = VSet.elements v in
-  let rec smallest_condesible wl i b =
-    if i > List.length wl then
-      VSet.of_list wl
-    else
-      let wi = List.nth_exn wl (i-1) in
-      let connected = w g (VSet.of_list wl) wi in
-      let new_b = VSet.union connected b in
-      let to_add = 
-        VSet.diff (new_b) (VSet.inter b connected)
-        |> VSet.elements
-      in
-      let new_wl = List.append wl to_add in
-      smallest_condesible new_wl (i+1) new_b
-  in
-  let b = w g v (List.hd_exn vl) in
-  smallest_condesible vl 2 b
-
+let smallest_condensible graph vset =
+  if VSet.length vset < 2 then VSet.empty else
+  let v = VSet.elements vset in
+  let vv = ref v in
+  let i = ref 2 in
+  let b = ref (w graph vset (List.hd_exn v)) in
+  while !i > List.length !vv do 
+    let wi = List.nth_exn !vv !i in
+    let connected = w graph (VSet.of_list !vv) wi in
+    let b2 = VSet.union !b connected in
+    let to_add = VSet.diff (b2) (VSet.inter connected !b) in
+    vv := (VSet.elements to_add) @ !vv;
+    b := b2;
+    i := !i + 1
+  done;
+  VSet.of_list !vv
+  
 (** [update_subset subset v1 succ(v1) v2 succ(v2)]: add [v2] to [subset]
     if it belongs to the same subset as [v1] *)
 let update_subset subset vi vi_neighbours vj vj_neighbours =
@@ -65,33 +63,57 @@ let update_subsetset subsetset new_subset =
     else 
       (Subsetset.add subsetset new_subset)
 
+let subset_contains v subset =
+  match subset with
+  | Clique vset -> VSet.mem vset v
+  | IndSet vset -> VSet.mem vset v
+
+let subset_add v subset =
+  match subset with 
+  | Clique vset -> Clique (VSet.add vset v)
+  | IndSet vset -> IndSet (VSet.add vset v)
+
 (* Algorithm 3.5 *)
 (** [cc_and_is graph]: returns the set of maximal condensible cliques and 
     independent set of [graph] *)
 let cc_and_is g =
-  let len_v = (Set.length g.nodes) in
+  let visited = ref VSet.empty in
+  let res = ref Subsetset.empty in
   let v = VSet.elements g.nodes in
-  let rec iterate_i i res =
-    if i >= len_v then
-      res
-    else
-      let vi = List.nth_exn v (i-1) in
-      let vi_neighbours = VMap.find_exn g.edges vi in
-      let rec iterate_j j subset =
-        if j >= len_v then
-          subset
-        else
-          let vj = List.nth_exn v (j-1) in
-          let vj_neighbours = VMap.find_exn g.edges vj in
-          let updated_subset = update_subset subset vi vi_neighbours vj vj_neighbours in
-          iterate_j (j+1) updated_subset
+  List.iteri v ~f:(fun i vi ->
+    let vi_neighbours = 
+      match VMap.find g.edges vi with
+      | None -> VSet.empty 
+      | Some vset -> vset
+    in
+    List.iteri v ~f:(fun j vj ->
+      if j <= i then () else
+      if VSet.mem !visited vj then () else
+      let vj_neighbours =
+        match VMap.find g.edges vj with
+        | None -> VSet.empty
+        | Some vset -> vset
       in
-      let j = i+1 in
-      let new_subset = iterate_j j (Clique (VSet.singleton vi)) in
-      let updated_res = update_subsetset res new_subset in
-      iterate_i (i+1) updated_res
-  in
-  iterate_i 1 (Subsetset.empty)
+      if VSet.equal (VSet.remove vi_neighbours vj) (VSet.remove vj_neighbours vi) then
+        let () = Printf.printf "%d %d\n" vi.id vj.id in
+        let () = visited := VSet.add !visited vj in
+        if not (VSet.mem !visited vi) then
+          let () = visited := VSet.add !visited vi in
+          let subset = 
+            if VSet.mem vi_neighbours vj then
+              Clique (VSet.of_list [vi; vj])
+            else
+              IndSet (VSet.of_list [vi; vj])
+          in
+          res := Subsetset.add !res subset;
+        else
+          let subset = Subsetset.find_exn !res ~f:(subset_contains vi) in 
+          let new_subset = subset_add vj subset in
+          let () = res := Subsetset.remove !res subset in
+          res := Subsetset.add !res new_subset
+    )
+  );
+  !res
 
 (** [subset_set_to_nodes subsetset]: given a set of subsets, convert each subset
     to a [node] and return them in a list *)
@@ -108,7 +130,7 @@ let subset_set_to_nodes subsetset =
 
 (** [condense_subset subset graph]: given [subset], condense its vertices into a
     fresh vertex in [graph] *)
-let condense_subset subset graph =
+let condense_subset subset graph state =
   let h, node = 
     match subset with
     | Clique set -> set, Tensor (vset_to_iset set)
@@ -117,67 +139,96 @@ let condense_subset subset graph =
   let new_vertex = 
     {
       connective = node;
-      id = fresh_id;
+      id = fresh_id state;
     }
   in
-  replace graph h new_vertex
+  replace graph h new_vertex state
 
 (** [condense_prime node vertices graph]: given a prime [node] and it's 
     corresponding [vertices], condense vertices into a fresh vertex *)
-let condense_prime node vertices graph =
+let condense_prime node vertices graph state =
   let new_vertex =
     {
       connective = node;
-      id = fresh_id;
+      id = fresh_id state;
     }
   in 
-  replace graph vertices new_vertex
+  replace graph vertices new_vertex state
+
+module VILMap = Core.Map.Make(Vertex)
 
 (* Algorithm 3.6 *)
 (** [condensible_subgraphs graph]: returns the minimal condensible subgraphs of 
     [graph]*)
 let condensible_subgraphs graph =
   let v = VSet.elements graph.nodes in
-  let edges = vertex_neighbour_pairs v graph.edges in
-  let h = List.map edges ~f:(smallest_condensible graph) in
-  let () = assert (List.length v = List.length h) in
-  let m = List.map h ~f:(VSet.length) in
-  let to_delete vi =
-    let i = Util.index vi v in
-    let hi = List.nth_exn h i in
-    let mi = List.nth_exn m i in
-    let hj = VSet.filter hi ~f:(fun vj -> Util.before vi vj v) in
-    VSet.fold hj
-      ~init:VSetSet.empty 
-      ~f:(fun accum vj -> 
-        let j = Util.index vj v in
-        let mj = List.nth_exn m j in
-        if mj >= mi then VSetSet.add accum (List.nth_exn h j) else VSetSet.add accum hi)
-    |> VSetSet.elements
+  let vertex_to_assoc_edges = ref VILMap.empty in
+  let edge_list = edge_tuple_list graph.edges in
+  let min_con_edges = List.map edge_list 
+    ~f:(fun (v1, v2) -> smallest_condensible graph (VSet.of_list [v1; v2]))
   in
-  let to_delete = List.concat_map v ~f:to_delete in
-  VSetSet.diff (VSetSet.of_list h) (VSetSet.of_list to_delete)
-    
+  List.iter v ~f:(fun vi -> List.iteri edge_list ~f:(fun i (v1, v2) ->
+    if Vertex.equal vi v1 || Vertex.equal vi v2 then
+      vertex_to_assoc_edges := VILMap.change !vertex_to_assoc_edges vi 
+        ~f:(fun il ->
+          match il with
+          | None -> Some [i]
+          | Some l -> Some (i :: l))
+  ));
+  let min_map = ref (
+    VILMap.map !vertex_to_assoc_edges ~f:(fun il ->
+      let sl = List.map il ~f:(List.nth_exn min_con_edges) in
+      List.fold sl ~init:VSet.empty ~f:(fun min s ->
+        if VSet.length min > VSet.length s then s else min)))
+  in
+  List.iteri v ~f:(fun i vi -> 
+    let hi =
+      match VILMap.find !min_map vi with
+      | None -> VSet.empty
+      | Some vset -> vset
+    in
+    let mi = VSet.length hi in
+    if mi = 0 then () else
+    List.iteri v ~f:(fun j vj ->
+      if j <= i then () else
+      if VSet.mem hi vj then
+      let mj =
+        match VILMap.find !min_map vj with
+        | None -> 0
+        | Some vset -> VSet.length vset
+      in
+      if mj = 0 then () else
+      if mj >= mi then
+        min_map := VILMap.remove !min_map vj
+      else
+        min_map := VILMap.remove !min_map vi
+  ));
+  VSetSet.of_list (VILMap.data !min_map)
+
 (** [condense_set subsets graph]: given a set of disjoint subsets, condense them
     all in [graph] *)
-let condense_set subsets graph =
+let condense_set subsets graph state =
   Subsetset.fold subsets
     ~init:graph
-    ~f:(fun accum ss -> condense_subset ss accum)
+    ~f:(fun accum ss -> condense_subset ss accum state)
 
 (** [condense_cliques graph]: condense all of the condensible maximal cliques 
     and independent sets in [graph] into fresh vertices *)
-let rec condense_cliques graph =
+let rec condense_cliques graph state =
   let cliques_and_ind = cc_and_is graph in
   if Subsetset.is_empty cliques_and_ind then
     graph
   else
-    condense_cliques (condense_set cliques_and_ind graph)
+    let () = 
+      Printf.printf("Found cliques and ind:\n");
+      Printf.printf "%d\n" (Subsetset.length cliques_and_ind)
+    in
+    condense_cliques (condense_set cliques_and_ind graph state) state
 
 (* Algorithm 3.4 *)
-let rec process graph =
-  if VSet.length graph.nodes = 1 then graph else
-  let condensed_graph = condense_cliques graph in
+let rec process graph state =
+  if VSet.length graph.nodes <= 1 then graph else
+  let condensed_graph = condense_cliques graph state in
   let min_cond = condensible_subgraphs condensed_graph in
   if VSetSet.is_empty min_cond then
     condensed_graph
@@ -193,6 +244,6 @@ let rec process graph =
     let prime_condensed_graph =
       List.fold prime_list
         ~init:condensed_graph 
-        ~f:(fun graph (node, h) -> condense_prime node h graph)
+        ~f:(fun graph (node, h) -> condense_prime node h graph state)
     in
-    process prime_condensed_graph
+    process prime_condensed_graph state

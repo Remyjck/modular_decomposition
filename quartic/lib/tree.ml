@@ -45,36 +45,36 @@ let from_map map =
   in
   {nodes = nodes; edges = edges}
           
-let rec tree_from_id id =
-  let vertex : Graph.vertex = Hashtbl.find_exn Graph.state.id_map id in
+let rec tree_from_id id (state : Graph.state) =
+  let vertex : Graph.vertex = Hashtbl.find_exn state.id_map id in
   match vertex.connective with
   | Graph.Atom atom -> {connective = Atom atom; id = vertex.id}
   | Graph.Tensor iset -> 
-    let tree_list = trees_from_id_list (Set.elements iset) in
+    let tree_list = trees_from_id_list (Set.elements iset) state in
     {connective = Tensor tree_list; id = vertex.id}
   | Graph.Par iset ->
-    let tree_list = trees_from_id_list (Set.elements iset) in
+    let tree_list = trees_from_id_list (Set.elements iset) state in
     {connective = Tensor tree_list; id = vertex.id}
   | Graph.Prime map ->
     let id_graph = from_map map in
-    let tree_list = trees_from_id_list id_graph.nodes in
+    let tree_list = trees_from_id_list id_graph.nodes state in
     {connective = Prime (id_graph, tree_list); id = vertex.id}
 
-and trees_from_id_list id_list =
-  List.map id_list ~f:tree_from_id
+and trees_from_id_list id_list state =
+  List.map id_list ~f:(Util.flip tree_from_id state)
 
-let tree_from_condensed (graph : Graph.graph) =
+let tree_from_condensed (graph : Graph.graph) state =
   let () = assert(Graph.VSet.length graph.nodes = 1) in
   let root = Graph.VSet.choose_exn graph.nodes in
   match root.connective with
   | Graph.Atom atom -> {connective = Atom atom; id = root.id}
   | Graph.Tensor iset -> 
-    let tree_list = trees_from_id_list (Set.elements iset) in
+    let tree_list = trees_from_id_list (Set.elements iset) state in
     {connective = Tensor tree_list; id = root.id}
   | Graph.Par iset ->
-    let tree_list = trees_from_id_list (Set.elements iset) in
+    let tree_list = trees_from_id_list (Set.elements iset) state in
     {connective = Par tree_list; id = root.id}
   | Graph.Prime map ->
     let id_graph = from_map map in
-    let tree_list = trees_from_id_list id_graph.nodes in
+    let tree_list = trees_from_id_list id_graph.nodes state in
     {connective = Prime (id_graph, tree_list); id = root.id}
