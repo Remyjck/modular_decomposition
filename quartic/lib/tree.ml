@@ -54,7 +54,7 @@ let rec tree_from_id id (state : Graph.state) =
     {connective = Tensor tree_list; id = vertex.id}
   | Graph.Par iset ->
     let tree_list = trees_from_id_list (Set.elements iset) state in
-    {connective = Tensor tree_list; id = vertex.id}
+    {connective = Par tree_list; id = vertex.id}
   | Graph.Prime map ->
     let id_graph = from_map map in
     let tree_list = trees_from_id_list id_graph.nodes state in
