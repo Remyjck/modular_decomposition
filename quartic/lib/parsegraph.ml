@@ -117,7 +117,7 @@ let from_id_graph (id_graph : Tree.id_graph) =
     ~f:(fun (n1,n2) -> `Assoc [("source", `Int n1); ("target", `Int n2)])
   in
   let edges_json = `List edges in
-  `Assoc [("nodes", nodes_json), ("edges", edges_json)]
+  `Assoc [("nodes", nodes_json); ("edges", edges_json)]
 
 let rec serialized_nodes_and_edges (tree : Tree.tree) =
   let connective, id_graph = from_connective tree.connective in
@@ -148,7 +148,7 @@ let serialize_tree_as_graph (tree : Tree.tree) =
   let json_edges = `List edges in
   `Assoc [("nodes", json_nodes); ("edges", json_edges)]
 
-let rec serialize_tree (tree : Tree.tree) =
+let rec serialize_tree (tree : Tree.tree) : Yojson.Basic.t =
   let id = `Int tree.id in
   let connective, id_graph = from_connective tree.connective in
   let node_base = [("connective", connective); ("id", id)] in

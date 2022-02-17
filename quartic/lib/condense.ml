@@ -188,16 +188,16 @@ let condensible_subgraphs graph =
       | Some vset -> vset
     in
     let mi = VSet.length hi in
-    if mi = 0 then () else
+    if mi = 0 then min_map := VILMap.remove !min_map vi else
     List.iteri v ~f:(fun j vj ->
       if j <= i then () else
-      if VSet.mem hi vj then
+      if not (VSet.mem hi vj) then () else
       let mj =
         match VILMap.find !min_map vj with
         | None -> 0
         | Some vset -> VSet.length vset
       in
-      if mj = 0 then () else
+      if mj = 0 then min_map := VILMap.remove !min_map vj else
       if mj >= mi then
         min_map := VILMap.remove !min_map vj
       else
@@ -230,6 +230,7 @@ let rec process graph state =
   if VSet.length graph.nodes <= 1 then graph else
   let condensed_graph = condense_cliques graph state in
   let min_cond = condensible_subgraphs condensed_graph in
+  let () = Printf.printf "Found condensible subgraphs:\n%d\n" (VSetSet.length min_cond) in
   if VSetSet.is_empty min_cond then
     condensed_graph
   else
@@ -241,9 +242,13 @@ let rec process graph state =
           let node = Prime (vmap_to_imap subgraph.edges) in
           (node, vset) :: accum)
     in
-    let prime_condensed_graph =
-      List.fold prime_list
-        ~init:condensed_graph 
-        ~f:(fun graph (node, h) -> condense_prime node h graph state)
-    in
-    process prime_condensed_graph state
+    if List.length prime_list = 0 then
+      let node = Prime (vmap_to_imap condensed_graph.edges) in
+      condense_prime node condensed_graph.nodes condensed_graph state
+    else 
+      let prime_condensed_graph =
+        List.fold prime_list
+          ~init:condensed_graph 
+          ~f:(fun graph (node, h) -> condense_prime node h graph state)
+      in
+      process prime_condensed_graph state
