@@ -39,6 +39,15 @@ module Vertex = struct
   include Comparable.Make(T)
 end
 
+let vertex_index elem l =
+  let rec index_r elem l i =
+    match l with
+    | [] -> raise_s [%message "error" "Vertex not found when looking for index"]
+    | h :: t ->
+      if Vertex.equal h elem then i else index_r elem t (i+1)
+  in
+  index_r elem l 0
+
 module VSet = Core.Set.Make(Vertex)
 module VMap = Core.Map.Make(Vertex)
 
@@ -57,14 +66,8 @@ let fresh_id state =
   state.total_vertices
 
 let add_vertices_to_hash vertices state =
-  Printf.printf "Vertices:\n";
-  VSet.iter vertices ~f:(fun v -> Printf.printf "%d " v.id);
-  Printf.printf "\n";
   VSet.iter vertices
-  ~f:(fun v -> Hashtbl.add_exn state.id_map ~key:v.id ~data:v);
-  Printf.printf "Hashtable:\n";
-  Hashtbl.iter_keys state.id_map ~f:(fun k -> Printf.printf "%d " k);
-  Printf.printf "\n\n"
+  ~f:(fun v -> Hashtbl.add_exn state.id_map ~key:v.id ~data:v)
 
 (** [add_vertex vertex graph]: remove [vertex] from [graph] in both the nodes 
     and edges *)
@@ -113,7 +116,6 @@ let connected graph vertices =
     [vertex] in [graph] *)
 let replace graph h vertex state =
   let () = assert(Core.Set.is_subset h ~of_:graph.nodes) in
-  let () = Printf.printf "Adding new vertex: %d\n" vertex.id in
   let () = add_vertices_to_hash h state in
   let new_neighbours = connected graph h in
   let new_nodes = VSet.diff graph.nodes h |> Util.flip VSet.add vertex in

@@ -31,3 +31,14 @@ let prime_condensed_graph =
     ~init:condensed_graph 
     ~f:(fun graph (node, h) -> Condense.condense_prime node h graph state)
 let%test _ = Graph.VSet.length prime_condensed_graph.nodes = 2
+
+let res = Condense.condense_cliques prime_condensed_graph state
+let%test _ = Graph.VSet.length res.nodes = 1
+
+let tree = Tree.tree_from_condensed res state
+
+let json_as_graph = Parsegraph.serialize_tree_as_graph tree
+let json = Parsegraph.serialize_tree tree
+
+(* let () = print_endline (Yojson.Basic.pretty_to_string json_as_graph)
+let () = print_endline (Yojson.Basic.pretty_to_string json) *)

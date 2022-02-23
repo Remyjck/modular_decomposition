@@ -19,22 +19,21 @@ module Subsetset = Set.Make(Subset)
 (** [smallest_condensible graph set]: returns the smallest condensible set 
     containing all vertices of [set] *)
 let smallest_condensible graph vset =
-  if VSet.length vset < 2 then VSet.empty else
-  let v = VSet.elements vset in
-  let vv = ref v in
-  let i = ref 2 in
-  let b = ref (w graph vset (List.hd_exn v)) in
-  while !i > List.length !vv do 
-    let wi = List.nth_exn !vv !i in
-    let connected = w graph (VSet.of_list !vv) wi in
-    let b2 = VSet.union !b connected in
-    let to_add = VSet.diff (b2) (VSet.inter connected !b) in
-    vv := (VSet.elements to_add) @ !vv;
-    b := b2;
-    i := !i + 1
-  done;
-  VSet.of_list !vv
-  
+  if VSet.length vset < 2 then vset else
+  let rec add_to_set res to_add =
+    if VSet.is_empty to_add then res else
+    let new_res = VSet.union res to_add in
+    let new_connected = connected graph new_res |> Util.flip VSet.diff res in
+    let new_to_add = VSet.fold new_res 
+      ~init:(VSet.empty)
+      ~f:(fun acum v ->
+        let wgi = w graph new_res v in
+        VSet.union acum (VSet.diff new_connected wgi))
+    in
+    add_to_set new_res new_to_add
+  in
+  add_to_set VSet.empty vset 
+
 (** [update_subset subset v1 succ(v1) v2 succ(v2)]: add [v2] to [subset]
     if it belongs to the same subset as [v1] *)
 let update_subset subset vi vi_neighbours vj vj_neighbours =
@@ -95,7 +94,6 @@ let cc_and_is g =
         | Some vset -> vset
       in
       if VSet.equal (VSet.remove vi_neighbours vj) (VSet.remove vj_neighbours vi) then
-        let () = Printf.printf "%d %d\n" vi.id vj.id in
         let () = visited := VSet.add !visited vj in
         if not (VSet.mem !visited vi) then
           let () = visited := VSet.add !visited vi in
@@ -155,55 +153,68 @@ let condense_prime node vertices graph state =
   in 
   replace graph vertices new_vertex state
 
-module VILMap = Core.Map.Make(Vertex)
-
 (* Algorithm 3.6 *)
 (** [condensible_subgraphs graph]: returns the minimal condensible subgraphs of 
     [graph]*)
 let condensible_subgraphs graph =
   let v = VSet.elements graph.nodes in
-  let vertex_to_assoc_edges = ref VILMap.empty in
   let edge_list = edge_tuple_list graph.edges in
+  let v_to_edge_index = Hashtbl.create (module Vertex) in
+  let () = List.iteri edge_list ~f:(fun i (v1, v2) ->
+    Hashtbl.change v_to_edge_index v1
+      ~f:(fun l ->
+        match l with
+        | None -> Some [i]
+        | Some l -> Some (i :: l));
+    Hashtbl.change v_to_edge_index v2
+      ~f:(fun l ->
+        match l with
+        | None -> Some [i]
+        | Some l -> Some (i :: l)))
+  in
   let min_con_edges = List.map edge_list 
     ~f:(fun (v1, v2) -> smallest_condensible graph (VSet.of_list [v1; v2]))
   in
-  List.iter v ~f:(fun vi -> List.iteri edge_list ~f:(fun i (v1, v2) ->
-    if Vertex.equal vi v1 || Vertex.equal vi v2 then
-      vertex_to_assoc_edges := VILMap.change !vertex_to_assoc_edges vi 
-        ~f:(fun il ->
-          match il with
-          | None -> Some [i]
-          | Some l -> Some (i :: l))
-  ));
-  let min_map = ref (
-    VILMap.map !vertex_to_assoc_edges ~f:(fun il ->
-      let sl = List.map il ~f:(List.nth_exn min_con_edges) in
-      List.fold sl ~init:VSet.empty ~f:(fun min s ->
-        if VSet.length min > VSet.length s then s else min)))
-  in
-  List.iteri v ~f:(fun i vi -> 
-    let hi =
-      match VILMap.find !min_map vi with
-      | None -> VSet.empty
-      | Some vset -> vset
+  let h = List.map v ~f:(fun v ->
+    let defined_on_v = List.map 
+      (match Hashtbl.find v_to_edge_index v with
+        | None -> []
+        | Some l -> l)
+      ~f:(fun i -> List.nth_exn min_con_edges i)
     in
-    let mi = VSet.length hi in
-    if mi = 0 then min_map := VILMap.remove !min_map vi else
-    List.iteri v ~f:(fun j vj ->
-      if j <= i then () else
-      if not (VSet.mem hi vj) then () else
-      let mj =
-        match VILMap.find !min_map vj with
-        | None -> 0
-        | Some vset -> VSet.length vset
-      in
-      if mj = 0 then min_map := VILMap.remove !min_map vj else
-      if mj >= mi then
-        min_map := VILMap.remove !min_map vj
-      else
-        min_map := VILMap.remove !min_map vi
-  ));
-  VSetSet.of_list (VILMap.data !min_map)
+    let rec smallest_card l = match l with
+      | [a] -> a
+      | [] -> VSet.empty
+      | h :: t -> 
+        let min_card = smallest_card t in
+        if VSet.length h < VSet.length min_card then
+          h
+        else
+          min_card
+    in
+    smallest_card defined_on_v)
+  in 
+  let considered = VSet.of_list v in
+  let res = List.foldi v ~init:considered
+    ~f:(fun i acum vi ->
+      let hi = List.nth_exn h i in
+      if not (VSet.mem acum vi) then acum else
+      VSet.fold hi ~init:acum
+        ~f:(fun acum2 vj ->
+          let j = vertex_index vj v in
+          if j = i then acum2 else
+          let vj = List.nth_exn v j in
+          if not (VSet.mem acum2 vj) then acum2 else
+          let hj = List.nth_exn h j in
+          if (VSet.length hj) >= (VSet.length hi) then
+            VSet.remove acum2 vj
+          else
+            VSet.remove acum2 vi))
+  in
+  VSet.fold res ~init:VSetSet.empty
+    ~f:(fun acum vi ->
+      let i = vertex_index vi v in
+      VSetSet.add acum (List.nth_exn h i))
 
 (** [condense_set subsets graph]: given a set of disjoint subsets, condense them
     all in [graph] *)
@@ -219,10 +230,6 @@ let rec condense_cliques graph state =
   if Subsetset.is_empty cliques_and_ind then
     graph
   else
-    let () = 
-      Printf.printf("Found cliques and ind:\n");
-      Printf.printf "%d\n" (Subsetset.length cliques_and_ind)
-    in
     condense_cliques (condense_set cliques_and_ind graph state) state
 
 (* Algorithm 3.4 *)
@@ -230,9 +237,9 @@ let rec process graph state =
   if VSet.length graph.nodes <= 1 then graph else
   let condensed_graph = condense_cliques graph state in
   let min_cond = condensible_subgraphs condensed_graph in
-  let () = Printf.printf "Found condensible subgraphs:\n%d\n" (VSetSet.length min_cond) in
   if VSetSet.is_empty min_cond then
-    condensed_graph
+    let node = Prime (vmap_to_imap condensed_graph.edges) in
+    condense_prime node condensed_graph.nodes condensed_graph state
   else
     let prime_list = 
       VSetSet.fold min_cond
@@ -242,13 +249,9 @@ let rec process graph state =
           let node = Prime (vmap_to_imap subgraph.edges) in
           (node, vset) :: accum)
     in
-    if List.length prime_list = 0 then
-      let node = Prime (vmap_to_imap condensed_graph.edges) in
-      condense_prime node condensed_graph.nodes condensed_graph state
-    else 
-      let prime_condensed_graph =
-        List.fold prime_list
-          ~init:condensed_graph 
-          ~f:(fun graph (node, h) -> condense_prime node h graph state)
-      in
-      process prime_condensed_graph state
+    let prime_condensed_graph =
+      List.fold prime_list
+        ~init:condensed_graph 
+        ~f:(fun graph (node, h) -> condense_prime node h graph state)
+    in
+    process prime_condensed_graph state
