@@ -2,7 +2,7 @@ open Quartic
 open Core
 
 let js_obj =
-    let buf = In_channel.read_all "graph.json" in
+    let buf = In_channel.read_all "./graph.json" in
     Yojson.Basic.from_string buf
 
 let graph, state = Parsegraph.parse js_obj
@@ -105,5 +105,5 @@ let tree = Tree.tree_from_condensed res state
 let json_as_graph = Parsegraph.serialize_tree_as_graph tree
 let json = Parsegraph.serialize_tree tree
 
-let () = print_endline (Yojson.Basic.pretty_to_string json_as_graph)
-let () = print_endline (Yojson.Basic.pretty_to_string json)
+(* let () = print_endline (Yojson.Basic.pretty_to_string json_as_graph) *)
+(* let () = print_endline (Yojson.Basic.pretty_to_string json) *)
