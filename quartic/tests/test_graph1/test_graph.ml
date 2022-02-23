@@ -84,7 +84,7 @@ let%test _ = Graph.VMap.length condensed_graph.edges = 5
 let%test _ = List.length (Graph.edge_tuple_list condensed_graph.edges) = 6
 
 let min_cond = Condense.condensible_subgraphs condensed_graph
-let%test _ = Condense.VSetSet.length min_cond = 0
+let%test _ = Condense.VSetSet.length min_cond = 1
 
 let prime_list =
   Condense.VSetSet.fold min_cond
@@ -93,11 +93,13 @@ let prime_list =
       let subgraph = Graph.induced_subgraph condensed_graph vset in
       let node = Graph.Prime (Graph.vmap_to_imap subgraph.edges) in
       (node, vset) :: accum)
-let%test _ = List.length prime_list = 0
+let%test _ = List.length prime_list = 1
+let%test _ = Graph.VSet.length (snd (List.nth_exn prime_list 0)) = 5
 
 let res =
-  let node = Graph.Prime (Graph.vmap_to_imap condensed_graph.edges) in
-  Condense.condense_prime node condensed_graph.nodes condensed_graph state
+  List.fold prime_list
+    ~init:condensed_graph 
+    ~f:(fun graph (node, h) -> Condense.condense_prime node h graph state)
 let%test _ = Graph.VSet.length res.nodes = 1
 
 let tree = Tree.tree_from_condensed res state
