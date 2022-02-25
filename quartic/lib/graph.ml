@@ -1,4 +1,4 @@
-open Core
+open Core_kernel
 
 type atom = {
     label : string;
@@ -7,13 +7,13 @@ type atom = {
   [@@deriving compare, sexp, hash]
 
 module ISet = struct
-  type t = Core.Set.M(Int).t [@@deriving compare, sexp, hash]
+  type t = Core_kernel.Set.M(Int).t [@@deriving compare, sexp, hash]
 end
 include Comparable.Make(ISet)
 include Hashable.Make(ISet)
 
 module IMap = struct
-  type t = ISet.t Core.Map.M(Int).t [@@deriving compare, sexp, hash]
+  type t = ISet.t Core_kernel.Map.M(Int).t [@@deriving compare, sexp, hash]
 end
 include Comparable.Make(IMap)
 include Hashable.Make(IMap)
@@ -48,8 +48,8 @@ let vertex_index elem l =
   in
   index_r elem l 0
 
-module VSet = Core.Set.Make(Vertex)
-module VMap = Core.Map.Make(Vertex)
+module VSet = Core_kernel.Set.Make(Vertex)
+module VMap = Core_kernel.Map.Make(Vertex)
 
 type graph = {
     nodes : VSet.t;
@@ -115,7 +115,7 @@ let connected graph vertices =
 (** [replace graph vertices vertex]: replace all vertices in [vertices] by 
     [vertex] in [graph] *)
 let replace graph h vertex state =
-  let () = assert(Core.Set.is_subset h ~of_:graph.nodes) in
+  let () = assert(Core_kernel.Set.is_subset h ~of_:graph.nodes) in
   let () = add_vertices_to_hash h state in
   let new_neighbours = connected graph h in
   let new_nodes = VSet.diff graph.nodes h |> Util.flip VSet.add vertex in
@@ -219,25 +219,25 @@ let edge_map edge_tuple_list =
   edge_list_to_map edge_tuple_list VMap.empty
 
 let vset_to_iset vset =
-  Core.Set.map (module Int) vset ~f:(fun v -> v.id)
+  Core_kernel.Set.map (module Int) vset ~f:(fun v -> v.id)
 
 let iset_to_vset map iset =
-  Core.Set.map (module Vertex) iset ~f:(fun i -> Map.find_exn map i)
+  Core_kernel.Set.map (module Vertex) iset ~f:(fun i -> Map.find_exn map i)
 
 let vmap_to_imap map =
   VMap.fold map
-    ~init:(Core.Map.empty (module Int))
+    ~init:(Core_kernel.Map.empty (module Int))
     ~f:(fun ~key:k ~data:v accum ->
       let data = vset_to_iset v in
-      Core.Map.add_exn accum ~key:k.id ~data:data)
+      Core_kernel.Map.add_exn accum ~key:k.id ~data:data)
 
 (** [id_map vset]: returns a map from the [id]s of the elements of [vset] to 
     the elements themselves *)
 let id_map vset =
   VSet.fold vset
-    ~init:(Core.Map.empty (module Int)) 
+    ~init:(Core_kernel.Map.empty (module Int)) 
     ~f:(fun accum vertex -> 
-      Core.Map.add_exn accum ~key:vertex.id ~data:vertex)
+      Core_kernel.Map.add_exn accum ~key:vertex.id ~data:vertex)
 
 (** [vertex_neighbour_pairs vertices edge_map]: return an assoc list from every 
     vertex to one of its neighbours *)

@@ -1,4 +1,4 @@
-open Core
+open Core_kernel
 
 type id_graph = {
     nodes : int list;

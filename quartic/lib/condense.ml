@@ -1,5 +1,5 @@
 open Graph
-open Core
+open Core_kernel
 
 module VSetSet = Set.Make(VSet)
 

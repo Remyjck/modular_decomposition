@@ -1,5 +1,5 @@
 open Graph
-open Core
+open Core_kernel
 open Yojson.Basic.Util
 
 let to_vertex js_obj =
