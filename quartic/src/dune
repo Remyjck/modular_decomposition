@@ -1,0 +1,8 @@
+(executable
+  (name main)
+  (modes js)
+  (preprocess
+    (pps js_of_ocaml-ppx))
+  (libraries quartic js_of_ocaml core_kernel)
+  (js_of_ocaml (flags --source-map --pretty))
+ )

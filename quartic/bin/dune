@@ -1,4 +1,0 @@
-(executable
- (public_name quartic)
- (name main)
- (libraries quartic))
