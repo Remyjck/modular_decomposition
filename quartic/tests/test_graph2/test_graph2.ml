@@ -1,5 +1,5 @@
-open Core
 open Quartic
+open Core_kernel
 
 let js_obj =
     let buf = In_channel.read_all "graph2.json" in
