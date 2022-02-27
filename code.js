@@ -6,10 +6,10 @@ document.addEventListener('mousemove', function(mouseMoveEvent){
 
 let changes = [];
 
-let cy = cytoscape({
-    container: document.getElementById('cy'),
+let cy1 = cytoscape({
+    container: document.getElementById('cy1'),
     wheelSensitivity: 0.2,
-    elements: [ { data: { id: '1', label: '1', polarisation: true, } }, { data: { id: '2', label: '2', polarisation: true, } }, { data: { id: '3', label: '3', polarisation: true, } }, { data: { id: '4', label: '4', polarisation: true, } }, { data: { id: '5', label: '5', polarisation: true, } }, { data: { id: '6', label: '6', polarisation: true, } }, { data: { id: '7', label: '7', polarisation: true, } }, { data: { id: '8', label: '8', polarisation: true, } }, { data: { source: '1', target: '2', } }, { data: { source: '1', target: '8', } }, { data: { source: '1', target: '3', } }, { data: { source: '2', target: '8', } }, { data: { source: '2', target: '3', } }, { data: { source: '3', target: '4', } }, { data: { source: '3', target: '5', } }, { data: { source: '4', target: '7', } }, { data: { source: '4', target: '8', } }, { data: { source: '5', target: '7', } }, { data: { source: '5', target: '8', } }, { data: { source: '6', target: '3', } }, { data: { source: '6', target: '7', } }, { data: { source: '6', target: '8', } }, { data: { source: '7', target: '8', } }],
+    elements: [ { data: { id: '1', label: '1', polarisation: true, } }, { data: { id: '2', label: '2', polarisation: true, } }, { data: { id: '3', label: '3', polarisation: true, } }, { data: { id: '4', label: '4', polarisation: true, } }, { data: { id: '5', label: '5', polarisation: true, } }, { data: { id: '6', label: '6', polarisation: true, } }, { data: { id: '7', label: '7', polarisation: true, } }, { data: { id: '8', label: '8', polarisation: true, } }, { data: { source: '1', target: '2', } }, { data: { source: '1', target: '8', } }, { data: { source: '1', target: '3', } }, { data: { source: '2', target: '8', } }, { data: { source: '2', target: '3', } }, { data: { source: '3', target: '4', } }, { data: { source: '3', target: '5', } }, { data: { source: '4', target: '7', } }, { data: { source: '4', target: '8', } }, { data: { source: '5', target: '7', } }, { data: { source: '5', target: '8', } }, { data: { source: '6', target: '3', } }, { data: { source: '6', target: '7', } }, { data: { source: '6', target: '8', } }, { data: { source: '7', target: '8', } }, { data: { source: '3', target: '8',} }],
     style: [
     {
         selector: 'node',
@@ -44,7 +44,7 @@ let cy = cytoscape({
     }]    
 });
 
-let total_nodes = cy.nodes().length;
+let total_nodes = cy1.nodes().length;
 
 function freshID() {
     total_nodes += 1;
@@ -56,7 +56,7 @@ function isAlphaNumeric(string) {
 };
 
 let isMouseOver = false;
-const cy_div = document.getElementById('cy');
+const cy_div = document.getElementById('cy1');
 cy_div.addEventListener("mouseleave", function(evt){
     isMouseOver = false;
 });
@@ -68,7 +68,7 @@ document.addEventListener('keyup', function(evt) {
     evt = evt || window.event;
     const string = evt.key;
     if (isAlphaNumeric(string) && isMouseOver) {
-        const offsets = document.getElementById('cy').getBoundingClientRect();
+        const offsets = document.getElementById('cy1').getBoundingClientRect();
         const node = {
             group: 'nodes',
             data: {
@@ -81,21 +81,21 @@ document.addEventListener('keyup', function(evt) {
                 y: mousePosition.y - offsets.top + 9,
             }
         };
-        const added = cy.add(node);
+        const added = cy1.add(node);
         changes.push(["add", added]);
         return;
     }
 
     if (string == "Backspace") {
-        const removed = cy.elements(':selected').remove();
+        const removed = cy1.elements(':selected').remove();
         changes.push(["remove", removed]);
     }
 });
 
-cy.on('cxttap', "node", function(evt) {
+cy1.on('cxttap', "node", function(evt) {
     const node = evt.target;
     if (node.selected()){
-        const selected = cy.nodes(':selected');
+        const selected = cy1.nodes(':selected');
         for (n of selected){
             const pol = n.data('polarisation');
             n.data('polarisation', !pol);
@@ -120,13 +120,13 @@ function addEdges(node, selected) {
             }
         })
     }
-    const added = cy.add(to_add);
+    const added = cy1.add(to_add);
     changes.push(["add", added]);
 };
 
-cy.on('click', "node", function(evt){
+cy1.on('click', "node", function(evt){
     const node = evt.target;
-    const selected = cy.nodes(':selected');
+    const selected = cy1.nodes(':selected');
     if (selected.length  == 0 || node.selected() || event.shiftKey) {
         return;
     }
@@ -137,12 +137,12 @@ cy.on('click', "node", function(evt){
 });
 
 function cleanLayout() {
-    cy.layout({
+    cy1.layout({
         name: 'cose',
         animate: false,
         fit: false,
     }).run();
-    cy.center();
+    cy1.center();
 };
 
 function undo() {
@@ -165,13 +165,13 @@ function undo() {
 };
 
 function serialize() {
-    const nodes = cy.nodes(':inside').jsons();
+    const nodes = cy1.nodes(':inside').jsons();
     const nodeData = nodes.map(node => { return {
         id: parseInt(node['data']['id'], 10),
         label: node['data']['label'],
         polarisation: node['data']['polarisation']
     }});
-    const edges = cy.edges(':inside').jsons();
+    const edges = cy1.edges(':inside').jsons();
     const edgeData = edges.map(edge => {return {
         source: parseInt(edge['data']['source'], 10),
         target: parseInt(edge['data']['target'])
@@ -192,7 +192,7 @@ function exportGraph() {
 }
 
 function clearGraph() {
-    const removed = cy.elements().remove();
+    const removed = cy1.elements().remove();
     changes.push(["remove", removed]);
 }
 
@@ -214,8 +214,8 @@ function onReaderLoad(event) {
         return {group: 'edges', data: edge}
     });
     clearGraph();
-    const added_nodes = cy.add(nodes_obj);
-    const added_edges = cy.add(edges_obj);
+    const added_nodes = cy1.add(nodes_obj);
+    const added_edges = cy1.add(edges_obj);
     const eles = added_nodes.union(added_edges);
     changes.push(["replace", eles]);
     cleanLayout();
@@ -223,4 +223,44 @@ function onReaderLoad(event) {
 
 document.addEventListener("DOMContentLoaded", function(event) {
     document.getElementById('upload').addEventListener('change', onChange);
+});
+
+let cy2 = cytoscape({
+    container: document.getElementById('cy2'),
+    wheelSensitivity: 0.2,
+    elements: [ { data: { id: '1', label: '1', polarisation: true, } }, { data: { id: '2', label: '2', polarisation: true, } }, { data: { id: '3', label: '3', polarisation: true, } }, { data: { id: '4', label: '4', polarisation: true, } }, { data: { id: '5', label: '5', polarisation: true, } }, { data: { id: '6', label: '6', polarisation: true, } }, { data: { id: '7', label: '7', polarisation: true, } }, { data: { id: '8', label: '8', polarisation: true, } }, { data: { source: '1', target: '2', } }, { data: { source: '1', target: '8', } }, { data: { source: '1', target: '3', } }, { data: { source: '2', target: '8', } }, { data: { source: '2', target: '3', } }, { data: { source: '3', target: '4', } }, { data: { source: '3', target: '5', } }, { data: { source: '4', target: '7', } }, { data: { source: '4', target: '8', } }, { data: { source: '5', target: '7', } }, { data: { source: '5', target: '8', } }, { data: { source: '6', target: '3', } }, { data: { source: '6', target: '7', } }, { data: { source: '6', target: '8', } }, { data: { source: '7', target: '8', } }],
+    style: [
+    {
+        selector: 'node',
+        style: {
+            'background-color': function(ele) {
+                if (ele.selected()) {
+                    return 'deepskyblue';
+                }
+                else {
+                    return 'white';
+                };
+            },
+            'border-color': 'black',
+            'border-width': '1px',
+            'label': function(ele){
+                var not;
+                if(!ele.data('polarisation')) {
+                    not = '¬';
+                } 
+                else {not = ''};
+                return not + ele.data('label');
+            },
+            "text-valign": "center",
+            "text-halign": "center",
+        }
+    },
+        {
+        selector: 'edge',
+        style: {
+            'width': '2px',
+            'curve-style': 'bezier',
+            'target-arrow-shape': 'triangle',
+        }
+    }]    
 });
