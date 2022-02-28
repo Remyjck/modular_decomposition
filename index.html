@@ -6,6 +6,9 @@
     <meta charset="utf-8">
     <title>Graph Modular Decomposition</title>
     <script src="cytoscape.js"></script>
+    <script src="https://unpkg.com/layout-base/layout-base.js"></script>
+    <script src="https://unpkg.com/cose-base/cose-base.js"></script>
+    <script src="cytoscape-cose-bilkent.js"></script>
 </head>
 
 <style>
@@ -62,6 +65,7 @@
                 <input id="upload" type="file" style="display: none;"/>
             </div>
         </div>
+        <button type="button" onclick="decompose()">Get Modular Decomposition</button>
         <div class="col right-space">
             <div id="cy2" class="cy"></div>
         </div>
