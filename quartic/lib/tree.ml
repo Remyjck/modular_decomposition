@@ -1,4 +1,4 @@
-open Core_kernel
+open Base
 
 type id_graph = {
     nodes : int list;
@@ -64,8 +64,8 @@ and trees_from_id_list id_list state =
   List.map id_list ~f:(Util.flip tree_from_id state)
 
 let tree_from_condensed (graph : Graph.graph) state =
-  let () = assert(Graph.VSet.length graph.nodes = 1) in
-  let root = Graph.VSet.choose_exn graph.nodes in
+  let () = assert(Set.length graph.nodes = 1) in
+  let root = Set.choose_exn graph.nodes in
   match root.connective with
   | Graph.Atom atom -> {connective = Atom atom; id = root.id}
   | Graph.Tensor iset -> 

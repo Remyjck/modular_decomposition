@@ -1,5 +1,5 @@
 open Graph
-open Core_kernel
+open Base
 open Yojson.Basic.Util
 
 let to_vertex js_obj =
@@ -12,7 +12,7 @@ let to_vertex js_obj =
 let to_nodes js_obj =
   let json_list = to_list js_obj in
   let vertex_list = List.map json_list ~f:to_vertex in
-  VSet.of_list vertex_list
+  Set.of_list (module Vertex) vertex_list
 
 let to_id_tuple js_obj =
   let src = js_obj |> member "source" |> to_int in
@@ -51,7 +51,7 @@ let parse js_obj =
   let nodes = js_obj |> member "nodes" |> to_nodes in
   let edges = js_obj |> member "edges" |> to_edge_map nodes in
   let max_id = 
-    let ids = List.map (VSet.elements nodes) ~f:(fun v -> v.id) in
+    let ids = List.map (Set.elements nodes) ~f:(fun v -> v.id) in
     match List.max_elt ids ~compare:Int.compare with
     | None -> 0
     | Some n -> n 
@@ -74,7 +74,7 @@ let from_vertex vertex =
     ]
 
 let from_nodes vset =
-  let node_list = VSet.elements vset in
+  let node_list = Set.elements vset in
   let json_list = List.map node_list ~f:from_vertex in
   `List json_list
 
