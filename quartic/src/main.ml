@@ -47,7 +47,6 @@ let rec draw_tree cy (tree : Tree.tree) =
     let () = cy##add node in
     node
   | Tensor tl ->
-    let () = Firebug.console##log "here" in
     let _ = List.map tl ~f:(draw_tree cy) in
     let node = object%js
       val group = group
@@ -87,6 +86,13 @@ let rec draw_tree cy (tree : Tree.tree) =
     let () = cy##add node in
     node
 
+let get_layout cy =
+  let options = object%js
+    val name = "breadthfirst" |> Js.string
+  end
+  in
+  cy##layout options
+
 let doc = Dom_html.document
 let cy = Js.Unsafe.js_expr "cy1"
 let nodes = (Js.Unsafe.coerce (get_nodes_arr cy)) |> Js.to_array
@@ -95,9 +101,10 @@ let edges_arr = (Js.Unsafe.coerce (get_edges_arr cy)) |> Js.to_array
 let edge_list = Array.map edges_arr ~f:(to_edge vertices) |> Array.to_list
 
 let (graph, state) = Graph.to_graph vertices edge_list
-(* let condensed_graph = Condense.process graph state *)
-(* let tree = Tree.tree_from_condensed condensed_graph state *)
+let condensed_graph = Condense.process graph state
+let tree = Tree.tree_from_condensed condensed_graph state
 
 let cy2 = Js.Unsafe.js_expr "cy2"
 let () = cy2##elements##remove
-(* let _ = draw_tree cy2 tree *)
+let _ = draw_tree cy2 tree
+let _ = let layout = get_layout cy2 in layout##run

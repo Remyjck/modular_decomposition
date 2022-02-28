@@ -6,6 +6,7 @@ let js_obj =
   Yojson.Basic.from_string s
 
 let graph, state = Parsegraph.parse js_obj
+let graph2, state2 = Parsegraph.parse js_obj
 
 let condensed_graph = Condense.condense_cliques graph state
 let%test _ = Set.length condensed_graph.nodes = 5
@@ -34,6 +35,9 @@ let%test _ = Set.length prime_condensed_graph.nodes = 2
 
 let res = Condense.condense_cliques prime_condensed_graph state
 let%test _ = Set.length res.nodes = 1
+
+let res2 = Condense.process graph2 state2
+let%test _ = Graph.VSet.equal res.nodes res2.nodes
 
 let tree = Tree.tree_from_condensed res state
 
