@@ -243,6 +243,7 @@ let rec condense_cliques graph state =
 let rec process graph state =
   if Set.length graph.nodes <= 1 then graph else
   let condensed_graph = condense_cliques graph state in
+  if Set.length condensed_graph.nodes <= 1 then condensed_graph else
   let min_cond = condensible_subgraphs condensed_graph in
   if Set.is_empty min_cond then
     let node = Prime (vmap_to_imap condensed_graph.edges) in
