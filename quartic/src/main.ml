@@ -144,9 +144,16 @@ let decompose () =
   match tree with
   | None -> ()
   | Some tree ->
+    let () = Js.Unsafe.global##.tree := (Parsegraph.serialize_tree tree |> Yojson.Basic.pretty_to_string |> Js.string) in
     let root = draw_tree cy2 tree in
     let _ = (get_layout cy2 root)##run in
     ()
 
-let _ = Js.export_all (object%js method decompose = decompose () end)
+let getTreeJson () =
+  Js.Unsafe.global##.tree
+
+let _ = Js.export_all (object%js
+  method decompose = decompose ()
+  method getTreeJson = getTreeJson ()
+  end)
 

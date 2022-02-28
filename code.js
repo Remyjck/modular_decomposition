@@ -189,7 +189,21 @@ function exportGraph() {
     const file = new Blob([JSON.stringify(data, null, 2)], {type: "text/plain"});
     a.href = URL.createObjectURL(file);
     a.download = "graph.json";
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+}
+
+function exportTree() {
+    const a = document.createElement("a");
+    const string = getTreeJson();
+    if (!string) {return}; 
+    const file = new Blob([string], {type: "text/plain"});
+    a.href = URL.createObjectURL(file);
+    a.download = "tree.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 function clearGraph() {
