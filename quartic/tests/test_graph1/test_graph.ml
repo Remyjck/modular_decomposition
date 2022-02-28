@@ -1,9 +1,9 @@
 open Quartic
-open Core_kernel
+open Base
 
 let js_obj =
-    let buf = In_channel.read_all "./graph.json" in
-    Yojson.Basic.from_string buf
+    let s = Stdio.In_channel.read_all "./graph.json" in
+    Yojson.Basic.from_string s
 
 let graph, state = Parsegraph.parse js_obj
 
@@ -11,13 +11,13 @@ let vertex = {Graph.connective = Atom {label = "new"; pol = true}; id = Graph.fr
 let%test _ = vertex.id = 9
 
 let graph = Graph.add_vertex vertex graph
-let%test _ = Graph.VSet.mem graph.nodes vertex
+let%test _ = Set.mem graph.nodes vertex
 
 let graph = Graph.remove_vertex vertex graph
-let%test _ = Graph.VSet.mem graph.nodes vertex |> not
+let%test _ = Set.mem graph.nodes vertex |> not
 
 
-let vset1, vset2 = Graph.VSet.partition_tf graph.nodes ~f:(fun v -> v.id mod 2 = 0)
+let vset1, vset2 = Set.partition_tf graph.nodes ~f:(fun v -> v.id % 2 = 0)
 let%test _ = Graph.disjoint vset1 vset2
 let%test _ = Graph.disjoint vset1 vset1 |> not
 
@@ -37,33 +37,33 @@ let%test _ =
     &&
     not (Hashtbl.is_empty dummy_state.id_map)
     &&
-    Graph.VSet.equal (Graph.VMap.find_exn graph.edges vertex) neighbours
+    Graph.VSet.equal (Map.find_exn graph.edges vertex) neighbours
 
 let%test _ =
     let graph = Graph.add_vertex vertex graph in
     let graph = Graph.connect_vertices vset1 vertex graph in
-    Graph.VSet.for_all vset1
+    Set.for_all vset1
       ~f:(fun v ->
-        Graph.VSet.mem (Graph.VMap.find_exn graph.edges v) vertex)
+        Set.mem (Map.find_exn graph.edges v) vertex)
 
 let%test _ =
   let graph = Graph.(<~>) graph vset1 in 
-  Graph.VSet.for_all graph.nodes
-    ~f:(fun v -> not (Graph.VSet.mem vset1 v))
+  Set.for_all graph.nodes
+    ~f:(fun v -> not (Set.mem vset1 v))
   &&
-  Graph.VMap.for_all graph.edges
+  Map.for_all graph.edges
     ~f:(fun vset -> Graph.disjoint vset vset1)
 
 let%test _ =
   let graph = Graph.induced_subgraph graph vset1 in
   Graph.VSet.equal graph.nodes vset1
   &&
-  Graph.VMap.for_all graph.edges
-    ~f:(fun vset -> Graph.VSet.is_subset vset ~of_:vset1)
+  Map.for_all graph.edges
+    ~f:(fun vset -> Set.is_subset vset ~of_:vset1)
 
 let%test _ =
   let from_id_list list =
-    Graph.VSet.filter graph.nodes
+    Set.filter graph.nodes
       ~f:(fun v -> List.mem list v.id ~equal:Int.equal)
   in
   let module1 = [4;5] in
@@ -79,28 +79,28 @@ let%test _ =
   not (Graph.is_module graph vertices3)
 
 let condensed_graph = Condense.condense_cliques graph state
-let%test _ = Graph.VSet.length condensed_graph.nodes = 5
-let%test _ = Graph.VMap.length condensed_graph.edges = 5
+let%test _ = Set.length condensed_graph.nodes = 5
+let%test _ = Map.length condensed_graph.edges = 5
 let%test _ = List.length (Graph.edge_tuple_list condensed_graph.edges) = 6
 
 let min_cond = Condense.condensible_subgraphs condensed_graph
-let%test _ = Condense.VSetSet.length min_cond = 1
+let%test _ = Set.length min_cond = 1
 
 let prime_list =
-  Condense.VSetSet.fold min_cond
+  Set.fold min_cond
     ~init:[]
     ~f:(fun accum vset -> 
       let subgraph = Graph.induced_subgraph condensed_graph vset in
       let node = Graph.Prime (Graph.vmap_to_imap subgraph.edges) in
       (node, vset) :: accum)
 let%test _ = List.length prime_list = 1
-let%test _ = Graph.VSet.length (snd (List.nth_exn prime_list 0)) = 5
+let%test _ = Set.length (snd (List.nth_exn prime_list 0)) = 5
 
 let res =
   List.fold prime_list
     ~init:condensed_graph 
     ~f:(fun graph (node, h) -> Condense.condense_prime node h graph state)
-let%test _ = Graph.VSet.length res.nodes = 1
+let%test _ = Set.length res.nodes = 1
 
 let tree = Tree.tree_from_condensed res state
 
