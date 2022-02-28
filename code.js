@@ -78,8 +78,8 @@ document.addEventListener('keyup', function(evt) {
                 polarisation: true,
             },
             renderedPosition: {
-                x : mousePosition.x + offsets.left - 13,
-                y: mousePosition.y - offsets.top + 9,
+                x : mousePosition.x + offsets.left - 54 + window.scrollX,
+                y: mousePosition.y - offsets.top - window.scrollY + 8,
             }
         };
         const added = cy1.add(node);
