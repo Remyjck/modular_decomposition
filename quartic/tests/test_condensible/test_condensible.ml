@@ -28,25 +28,25 @@ let vset18 = Set.of_list (module Graph.Vertex) [v1; v8]
 let vset38 = Set.of_list (module Graph.Vertex) [v3; v8]
 let vset48 = Set.of_list (module Graph.Vertex) [v4; v8]
 
-let scond13 = Condense.smallest_condensible graph vset13
+let scond13 = Condense.smallest_condensible graph vset13 |> Option.value_exn
 let%test _ = Set.length scond13 = 4
 
-let scond34 = Condense.smallest_condensible graph vset34
+let scond34 = Condense.smallest_condensible graph vset34 |> Option.value_exn
 let%test _ = Set.length scond34 = 4
 
-let scond47 = Condense.smallest_condensible graph vset47
+let scond47 = Condense.smallest_condensible graph vset47 |> Option.value_exn
 let%test _ = Set.length scond47 = 4
 
-let scond78 = Condense.smallest_condensible graph vset78
+let scond78 = Condense.smallest_condensible graph vset78 |> Option.value_exn
 let%test _ = Set.length scond78 = 5
 
-let scond18 = Condense.smallest_condensible graph vset18
+let scond18 = Condense.smallest_condensible graph vset18 |> Option.value_exn
 let%test _ = Set.length scond18 = 5
 
-let scond38 = Condense.smallest_condensible graph vset38
+let scond38 = Condense.smallest_condensible graph vset38 |> Option.value_exn
 let%test _ = Set.length scond38 = 5
 
-let scond48 = Condense.smallest_condensible graph vset48
+let scond48 = Condense.smallest_condensible graph vset48 |> Option.value_exn
 let%test _ = Set.length scond48 = 5
 
 let cond_sub = Condense.condensible_subgraphs graph
