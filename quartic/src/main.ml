@@ -1,5 +1,5 @@
 open Quartic
-open Core_kernel
+open Base
 open Js_of_ocaml
 
 let get_nodes_arr cy : Js.Unsafe.any_js_array  = 
@@ -31,7 +31,7 @@ let to_edge (vertices : Graph.vertex list) (edge : <data : Js.js_string Js.t -> 
   (source, target)
 
 let rec draw_tree cy (tree : Tree.tree) =
-  let id = string_of_int tree.id |> Js.string in
+  let id = Int.to_string tree.id |> Js.string in
   let group = Js.string "nodes" in
   match tree.connective with
   | Atom atom -> 
@@ -95,7 +95,7 @@ let edges_arr = (Js.Unsafe.coerce (get_edges_arr cy)) |> Js.to_array
 let edge_list = Array.map edges_arr ~f:(to_edge vertices) |> Array.to_list
 
 let (graph, state) = Graph.to_graph vertices edge_list
-let condensed_graph = Condense.process graph state
+(* let condensed_graph = Condense.process graph state *)
 (* let tree = Tree.tree_from_condensed condensed_graph state *)
 
 let cy2 = Js.Unsafe.js_expr "cy2"
