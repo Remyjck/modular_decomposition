@@ -16,4 +16,4 @@ and tree = {
 
 val successors : tree -> tree list
 
-val tree_from_condensed : Graph.graph -> Graph.state -> tree
+val tree_from_condensed : Graph.graph -> Graph.state -> tree option

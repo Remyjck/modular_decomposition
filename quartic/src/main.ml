@@ -141,9 +141,12 @@ let decompose () =
 
   let cy2 = Js.Unsafe.js_expr "cy2" in
   let () = cy2##elements##remove in
-  let root = draw_tree cy2 tree in
-  let _ = (get_layout cy2 root)##run in
-  ()
+  match tree with
+  | None -> ()
+  | Some tree ->
+    let root = draw_tree cy2 tree in
+    let _ = (get_layout cy2 root)##run in
+    ()
 
 let _ = Js.export_all (object%js method decompose = decompose () end)
 

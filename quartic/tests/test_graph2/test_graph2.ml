@@ -39,7 +39,7 @@ let%test _ = Set.length res.nodes = 1
 let res2 = Condense.process graph2 state2
 let%test _ = Graph.VSet.equal res.nodes res2.nodes
 
-let tree = Tree.tree_from_condensed res state
+let tree = Tree.tree_from_condensed res state |> Option.value_exn
 
 let json_as_graph = Parsegraph.serialize_tree_as_graph tree
 let json = Parsegraph.serialize_tree tree

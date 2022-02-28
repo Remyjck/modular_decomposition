@@ -64,17 +64,19 @@ and trees_from_id_list id_list state =
   List.map id_list ~f:(Util.flip tree_from_id state)
 
 let tree_from_condensed (graph : Graph.graph) state =
-  let () = assert(Set.length graph.nodes = 1) in
-  let root = Set.choose_exn graph.nodes in
-  match root.connective with
-  | Graph.Atom atom -> {connective = Atom atom; id = root.id}
-  | Graph.Tensor iset -> 
-    let tree_list = trees_from_id_list (Set.elements iset) state in
-    {connective = Tensor tree_list; id = root.id}
-  | Graph.Par iset ->
-    let tree_list = trees_from_id_list (Set.elements iset) state in
-    {connective = Par tree_list; id = root.id}
-  | Graph.Prime map ->
-    let id_graph = from_map map in
-    let tree_list = trees_from_id_list id_graph.nodes state in
-    {connective = Prime (id_graph, tree_list); id = root.id}
+  let () = assert(Set.length graph.nodes <= 1) in
+  match Set.choose graph.nodes with
+    | None -> None 
+    | Some root ->
+    match root.connective with
+    | Graph.Atom atom -> Some {connective = Atom atom; id = root.id}
+    | Graph.Tensor iset -> 
+      let tree_list = trees_from_id_list (Set.elements iset) state in
+      Some {connective = Tensor tree_list; id = root.id}
+    | Graph.Par iset ->
+      let tree_list = trees_from_id_list (Set.elements iset) state in
+      Some {connective = Par tree_list; id = root.id}
+    | Graph.Prime map ->
+      let id_graph = from_map map in
+      let tree_list = trees_from_id_list id_graph.nodes state in
+      Some {connective = Prime (id_graph, tree_list); id = root.id}
