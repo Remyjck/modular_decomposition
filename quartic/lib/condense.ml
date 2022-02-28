@@ -26,7 +26,7 @@ end
 (** [smallest_condensible graph set]: returns the smallest condensible set 
     containing all vertices of [set] *)
 let smallest_condensible graph vset =
-  if Set.length vset < 2 then vset else
+  if Set.length vset < 2 then None else
   let rec add_to_set res to_add =
     if Set.is_empty to_add then res else
     let new_res = Set.union res to_add in
@@ -39,7 +39,7 @@ let smallest_condensible graph vset =
     in
     add_to_set new_res new_to_add
   in
-  add_to_set (Set.empty (module Vertex)) vset 
+  Some (add_to_set (Set.empty (module Vertex)) vset)
 
 (** [update_subset subset v1 succ(v1) v2 succ(v2)]: add [v2] to [subset]
     if it belongs to the same subset as [v1] *)
@@ -190,14 +190,19 @@ let condensible_subgraphs graph =
       ~f:(fun i -> List.nth_exn min_con_edges i)
     in
     let rec smallest_card l = match l with
-      | [a] -> a
+      | [a] -> (match a with
+        | None -> Set.empty (module Vertex) 
+        | Some a -> a)
       | [] -> Set.empty (module Vertex)
       | h :: t -> 
         let min_card = smallest_card t in
-        if Set.length h < Set.length min_card then
-          h
-        else
-          min_card
+        match h with 
+        | None -> min_card
+        | Some h ->
+          if Set.length h < Set.length min_card then
+            h
+          else
+            min_card
     in
     smallest_card defined_on_v)
   in 
@@ -221,7 +226,9 @@ let condensible_subgraphs graph =
   Set.fold res ~init:(Set.empty (module VSet))
     ~f:(fun acum vi ->
       let i = vertex_index vi v in
-      Set.add acum (List.nth_exn h i))
+      let set = List.nth_exn h i in
+      if Set.is_empty set then acum else
+      Set.add acum set)
 
 (** [condense_set subsets graph]: given a set of disjoint subsets, condense them
     all in [graph] *)
