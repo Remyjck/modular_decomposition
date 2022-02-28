@@ -43,7 +43,7 @@ let draw_prime_graph cy parent (id_graph : Tree.id_graph) =
       end
     end
     in
-    let _ = cy##add (Js.Unsafe.coerce node) in
+    let added_node = cy##add (Js.Unsafe.coerce node) in
     let edge = object%js
       val data = object%js
         val source = rep_id
@@ -52,7 +52,8 @@ let draw_prime_graph cy parent (id_graph : Tree.id_graph) =
     end
     in
     let added_edge = cy##add (Js.Unsafe.coerce edge) in
-    (Js.Unsafe.coerce added_edge)##addClass (Js.string "compoundOut"))
+    let () = (Js.Unsafe.coerce added_edge)##addClass (Js.string "compoundOut") in
+    (Js.Unsafe.coerce added_node)##addClass (Js.string "inCompound"))
   in
   let () = List.iter id_graph.edges ~f:(fun (id1, id2) ->
     let edge = object%js
@@ -146,6 +147,8 @@ let decompose () =
   | Some tree ->
     let () = Js.Unsafe.global##.tree := (Parsegraph.serialize_tree tree |> Yojson.Basic.pretty_to_string |> Js.string) in
     let root = draw_tree cy2 tree in
+    let root_node = cy2##nodes (String.concat ["#";Js.to_string root] |> Js.string) in
+    let () = (Js.Unsafe.coerce root_node)##addClass (Js.string "root") in
     let _ = (get_layout cy2 root)##run in
     ()
 

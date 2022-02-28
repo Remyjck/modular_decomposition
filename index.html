@@ -43,6 +43,10 @@
         display: flex;
         flex-direction: column;
     }
+
+    #decompose {
+        height: 600px;
+    }
 </style>
 
 <body>
@@ -59,18 +63,18 @@
             <div class="row space-evenly">
                 <button type="button" onclick="clearGraph()">Clear Graph</button>
                 <button type="button" onclick="cleanLayout()">Clean Layout</button>
-                <button type="button" onclick="cy1.center()">Center Graph</button>
+                <button type="button" onclick="cy1.center(); cy1.fit()">Center Graph</button>
                 <button type="button" id="download" onclick="exportGraph()">Download Graph</button>
                 <button type="button" onclick="document.getElementById('upload').click()">Import Graph</button>
                 <input id="upload" type="file" style="display: none;"/>
                 <button type="button" onclick="undo()">Undo</button>
             </div>
         </div>
-        <button type="button" onclick="decompose()">Get Modular Decomposition</button>
+        <button type="button" id="decompose" onclick="decompose()">Get Modular Decomposition</button>
         <div class="col right-space">
             <div id="cy2" class="cy"></div>
             <div class="row space-evenly">
-                <button type="button" onclick="cy2.center()">Center Graph</button>
+                <button type="button" onclick="cy2.center(); cy2.fit()">Center Graph</button>
                 <button type="button" id="download2" onclick="exportTree()">Download Tree</button>
             </div>
         </div>

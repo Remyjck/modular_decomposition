@@ -287,6 +287,30 @@ let cy2 = cytoscape({
         selector: '.compoundIn',
         style: {
             'curve-style': 'haystack',
+            'line-color': '#888888'
+        }
+    },
+    {
+        selector: '.inCompound',
+        style: {
+            'background-color': '#888888',
+            'border-color': '#888888',
+        }
+    },
+    {
+        selector: ':parent',
+        style: {
+            'shape': 'roundrectangle',
+            'background-color': '#BBBBBB',
+            'border-color': '#666666',
+            'border-width': '1px',
+        }
+    },
+    {
+        selector: '.root',
+        style: {
+            'border-color': 'cornflowerblue',
+            'border-width': '2px',
         }
     }]    
 });
