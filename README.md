@@ -1,7 +1,7 @@
 <div id="top"></div>
 
 [![Build](https://github.com/Remyjck/modular_decomposition/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/Remyjck/modular_decomposition/actions/workflows/main.yml)
-[![Build](https://github.com/Remyjck/modular_decomposition/actions/workflows/lines.yml/cloc.svg?branch=main)](https://github.com/Remyjck/modular_decomposition/actions/workflows/main.yml)
+[![Lines](https://github.com/Remyjck/modular_decomposition/actions/workflows/lines.yml/cloc.svg?branch=main)](https://github.com/Remyjck/modular_decomposition/actions/workflows/lines.yml)
 
 Modular Decomposition of Graphs
 ===
