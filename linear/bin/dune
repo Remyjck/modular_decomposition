@@ -1,4 +1,0 @@
-(executable
- (public_name modular_decomposition)
- (name main)
- (libraries modular_decomposition))
