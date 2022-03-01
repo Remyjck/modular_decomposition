@@ -19,8 +19,8 @@ jobs:
         with:
           debug: false
           badge: .github/cloc.svg
-          ignore: _build/*
-          patterns: quartic/* | *.ml
+          ignore: '_build/'
+          patterns: 'quartic/* | *.ml'
           
       - name: Print the output
         run: |
