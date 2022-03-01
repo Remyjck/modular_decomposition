@@ -32,15 +32,17 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       
-      - run: cd quartic
-
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
+
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
-
+          
       - run: opam install . --deps-only --with-test
+        working-directory: ./quartic
 
       - run: opam exec -- dune build
+        working-directory: ./quartic
 
       - run: opam exec -- dune runtest
+        working-directory: ./quartic
