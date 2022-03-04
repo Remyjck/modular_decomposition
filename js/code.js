@@ -131,7 +131,7 @@ cy1.on('click', "node", function(evt){
         return;
     }
     else {
-        addEdges(node, selected);
+        addEdges(cy1, node, selected);
         selected.unselect();
     };
 });
