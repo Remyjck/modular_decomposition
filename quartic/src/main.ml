@@ -186,7 +186,7 @@ and read_tree root =
   let label_string = root##data (Js.string "label") |> Js.to_string in
   let id = root##data (Js.string "id") |> Js.parseInt in
   if String.equal label_string "" then read_prime root id else
-  let successors = root##successors (Js.string "node") |> Js.to_array |> Array.to_list in
+  let successors = root##outgoers (Js.string "node") |> Js.to_array |> Array.to_list in
   if List.is_empty successors then read_atom (Js.Unsafe.coerce root) id label_string else
   let tl = List.map successors ~f:read_tree in
   let connective =
