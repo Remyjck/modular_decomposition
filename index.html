@@ -9,77 +9,63 @@
     <script src="https://unpkg.com/layout-base/layout-base.js"></script>
     <script src="https://unpkg.com/cose-base/cose-base.js"></script>
     <script src="js/dependencies/cytoscape-cose-bilkent.js"></script>
+    <link rel="stylesheet" href="css/pico.min.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
-<style>
-    .cy {
-        width: 35vw;
-        height: 600px;
-        position: relative;
-        background-color: lightgrey;
-        border-radius: 15px;
-    }
-
-    .row {
-        display: flex;
-    }
-
-    .space-between {
-        justify-content: space-between;
-    }
-
-    .space-evenly {
-        justify-content: space-evenly;
-    }
-
-    .left-space {
-        margin-left: 20px;
-    }
-
-    .right-space {
-        margin-right: 20px;
-    }
-
-    .col {
-        display: flex;
-        flex-direction: column;
-    }
-
-    #decompose {
-        height: 600px;
-    }
-</style>
-
 <body>
-    <ul>
-        <li>To add nodes: move mouse pointer to where you want to add a node and press a letter or number on the keyboard</li>
-        <li>To add edges: click on an unselected node to connect it to all selected nodes</li>
-        <li>To select a node or an edge: click or shift click to select several</li>
-        <li>To delete nodes: hit backspace to delete all selected nodes and corresponding edges</li>
-        <li>To negate nodes: right click selected or single node</li>
-    </ul> 
-    <div class="row space-between">
-        <div class="col left-space">
-            <div id="cy1" class="cy"></div>
-            <div class="row space-evenly">
-                <button type="button" onclick="clearGraph()">Clear Graph</button>
+    <section class="container">
+        <hgroup style="text-align: center;">
+            <h1>Modular Decomposition of Graphs</h1>
+            <h2>A tool for the manipulation and visualisation of graphs and their structures</h2>
+        </hgroup>
+        <article style="padding-bottom: 20px;">
+            <details>
+                <summary>Usage instructions</summary>
+                    <ul>
+                        <li>To add nodes: move mouse pointer to where you want to add a node and press a letter or number on the keyboard</li>
+                        <li>To add edges: click on an unselected node to connect it to all selected nodes</li>
+                        <li>To select a node or an edge: click or shift click to select several</li>
+                        <li>To delete nodes: hit backspace to delete all selected nodes and corresponding edges</li>
+                        <li>To negate nodes: right click selected or single node</li>
+                    </ul> 
+            </details>
+        </article>
+    </section>
+
+    <section>
+    <div class="grid left-space right-space align-items-center">
+        <div class="col">
+            <div class="grid">
+                <button type="button" onclick="clearGraph(cy1)">Clear Graph</button>
                 <button type="button" onclick="cleanLayout()">Clean Layout</button>
-                <button type="button" onclick="cy1.center(); cy1.fit()">Center Graph</button>
+                <button type="button" onclick="cy1.center(); cy1.fit(10)">Center Graph</button>
+            </div>
+            <div id="cy1" class="cy"></div>
+            <div class="grid">
                 <button type="button" id="download" onclick="exportGraph()">Download Graph</button>
                 <button type="button" onclick="document.getElementById('upload').click()">Import Graph</button>
                 <input id="upload" type="file" style="display: none;"/>
-                <button type="button" onclick="undo()">Undo</button>
+                <button type="button" onclick="undo(cy1)">Undo</button>
             </div>
         </div>
-        <button type="button" id="decompose" onclick="decompose()">Get Modular Decomposition</button>
-        <div class="col right-space">
+        <div class="col">
+            <button type="button" id="decompose" onclick="decompose()">Get Modular Decomposition</button>
+        </div>
+        <div class="col">
+            <div class="grid">
+                <button type="button" onclick="clearGraph(cy2)">Clear Tree</button>
+                <button type="button" onclick="cy2.center(); cy2.fit(10)">Center Tree</button>
+            </div>
             <div id="cy2" class="cy"></div>
-            <div class="row space-evenly">
-                <button type="button" onclick="cy2.center(); cy2.fit()">Center Graph</button>
+            <div class="grid">
                 <button type="button" id="download2" onclick="exportTree()">Download Tree</button>
+                <button type="button" onclick="undo(cy2)">Undo</button>
             </div>
         </div>
-   </div>
+    </div>
+</section>
+
     <script src="js/code.js"></script>
     <script src="quartic/_build/default/src/main.bc.js"></script>
 </body>

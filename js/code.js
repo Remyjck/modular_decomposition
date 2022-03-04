@@ -1,11 +1,3 @@
-let mousePosition = {x:0, y:0};
-document.addEventListener('mousemove', function(mouseMoveEvent){
-    mousePosition.x = mouseMoveEvent.pageX;
-    mousePosition.y = mouseMoveEvent.pageY;
-}, false);
-
-let changes = [];
-
 let cy1 = cytoscape({
     container: document.getElementById('cy1'),
     wheelSensitivity: 0.2,
@@ -44,6 +36,13 @@ let cy1 = cytoscape({
         }
     }]    
 });
+cy1.changes = [];
+
+let mousePosition1 = {x:0, y:0};
+cy1.on('mousemove', function(mouseMoveEvent){
+    mousePosition1.x = mouseMoveEvent.renderedPosition.x;
+    mousePosition1.y = mouseMoveEvent.renderedPosition.y;
+}, false);
 
 let total_nodes = cy1.nodes().length;
 
@@ -78,18 +77,18 @@ document.addEventListener('keyup', function(evt) {
                 polarisation: true,
             },
             renderedPosition: {
-                x : mousePosition.x + offsets.left - 54 + window.scrollX,
-                y: mousePosition.y - offsets.top - window.scrollY + 8,
+                x : mousePosition1.x,
+                y : mousePosition1.y,
             }
         };
         const added = cy1.add(node);
-        changes.push(["add", added]);
+        cy1.changes.push(["add", added]);
         return;
     }
 
     if (string == "Backspace") {
         const removed = cy1.elements(':selected').remove();
-        changes.push(["remove", removed]);
+        cy1.changes.push(["remove", removed]);
     }
 });
 
@@ -108,7 +107,7 @@ cy1.on('cxttap', "node", function(evt) {
     }
 });
 
-function addEdges(node, selected) {
+function addEdges(cy, node, selected) {
     const target = node.data('id');
     let to_add = [];
     for (const source of selected) {
@@ -121,8 +120,8 @@ function addEdges(node, selected) {
             }
         })
     }
-    const added = cy1.add(to_add);
-    changes.push(["add", added]);
+    const added = cy.add(to_add);
+    cy.changes.push(["add", added]);
 };
 
 cy1.on('click', "node", function(evt){
@@ -146,9 +145,9 @@ function cleanLayout() {
     cy1.center();
 };
 
-function undo() {
-    if (changes.length == 0) {return};
-    const [change, eles, ...rest] = changes.pop();
+function undo(cy) {
+    if (cy.changes.length == 0) {return};
+    const [change, eles, ...rest] = cy.changes.pop();
     if (change == "add") {
         eles.remove();
         return;
@@ -206,9 +205,9 @@ function exportTree() {
     document.body.removeChild(a);
 }
 
-function clearGraph() {
-    const removed = cy1.elements().remove();
-    changes.push(["remove", removed]);
+function clearGraph(cy) {
+    const removed = cy.elements().remove();
+    cy.changes.push(["remove", removed]);
 }
 
 function onChange(event) {
@@ -232,7 +231,7 @@ function onReaderLoad(event) {
     const added_nodes = cy1.add(nodes_obj);
     const added_edges = cy1.add(edges_obj);
     const eles = added_nodes.union(added_edges);
-    changes.push(["replace", eles]);
+    cy1.changes.push(["replace", eles]);
     cleanLayout();
 }
 
@@ -314,3 +313,4 @@ let cy2 = cytoscape({
         }
     }]    
 });
+cy2.changes = [];

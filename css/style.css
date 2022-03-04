@@ -1,0 +1,47 @@
+.cy {
+    height: 600px;
+    position: relative;
+    background-color: lightgrey;
+    border-radius: 15px;
+}
+
+.row {
+    display: flex;
+}
+
+.space-between {
+    justify-content: space-between;
+}
+
+.space-evenly {
+    justify-content: space-evenly;
+}
+
+.left-space {
+    margin-left: 120px;
+}
+
+.right-space {
+    margin-right: 120px;
+}
+
+.col {
+    display: flex;
+    flex-direction: column;
+}
+
+#decompose {
+    height: 100px;
+    width: 40%;
+    margin: auto;
+}
+
+button {
+    padding-right: 0px;
+    padding-left: 0px;
+    margin-top: 20px;
+}
+
+.grid {
+    align-items: center;
+}
