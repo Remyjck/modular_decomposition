@@ -141,7 +141,8 @@ let decompose () =
   let tree = Tree.tree_from_condensed condensed_graph state in
 
   let cy2 = Js.Unsafe.js_expr "cy2" in
-  let () = cy2##elements##remove in
+  let removed = cy2##elements##remove in
+  let () = cy2##.changes##push ([|Js.Unsafe.inject (Js.string "remove"); removed|] |> Js.array) in
   match tree with
   | None -> ()
   | Some tree ->
@@ -149,8 +150,95 @@ let decompose () =
     let root = draw_tree cy2 tree in
     let root_node = cy2##nodes (String.concat ["#";Js.to_string root] |> Js.string) in
     let () = (Js.Unsafe.coerce root_node)##addClass (Js.string "root") in
+    let () = cy2##.changes##push ([|Js.Unsafe.inject (Js.string "replace"); cy2##elements|] |> Js.array) in
     let _ = (get_layout cy2 root)##run in
     ()
+
+let rec read_prime root id =
+  let children = root##children |> Js.to_array |> Array.to_list in
+  let () = assert (List.length children > 3) in
+  let nodes = List.map children ~f:(fun c -> 
+    let node_id_s = c##id |> Js.to_string in
+    Util.remove_rep node_id_s)
+  in
+  let edge_objs = (Js.Unsafe.coerce root##children)##connectedEdges
+    (Js.string ".compoundIn") |> Js.to_array |> Array.to_list
+  in
+  let edges = List.map edge_objs ~f:(fun edge ->
+    let source = edge##source##id |> Js.to_string |> Util.remove_rep in
+    let target = edge##target##id |> Js.to_string |> Util.remove_rep in
+    (source, target))
+  in
+  let successors_objs = ((Js.Unsafe.coerce root##children)##outgoers (Js.string "node"))##orphans
+    |> Js.to_array |> Array.to_list
+  in
+  let successors = List.map successors_objs ~f:read_tree in
+  let id_graph = {Tree.nodes = nodes; edges = edges} in
+  let connective = Tree.Prime (id_graph, successors) in
+  {Tree.connective = connective; id = id}
+
+and read_atom node id label =
+  let pol = node##data (Js.string "polarisation") |> Js.to_bool in
+  let connective = Tree.Atom {Graph.label = label; pol = pol} in
+  {Tree.connective = connective; id = id}
+
+and read_tree root =
+  let label_string = root##data (Js.string "label") |> Js.to_string in
+  let id = root##data (Js.string "id") |> Js.parseInt in
+  if String.equal label_string "" then read_prime root id else
+  let successors = root##successors (Js.string "node") |> Js.to_array |> Array.to_list in
+  if List.is_empty successors then read_atom (Js.Unsafe.coerce root) id label_string else
+  let tl = List.map successors ~f:read_tree in
+  let connective =
+    if String.equal label_string "⊗" then 
+      Tree.Tensor tl
+    else
+      Tree.Par tl
+  in
+  {Tree.connective = connective; id = id}
+
+let draw_graph cy (graph : Graph.graph) =
+  Set.iter graph.nodes ~f:(fun v ->
+    match v.connective with
+    | Atom atom -> 
+      let node = object%js
+        val group = Js.string "nodes"
+        val data = object%js
+          val id = Int.to_string v.id |> Js.string
+          val label = Js.string atom.label
+          val polarisation = Js.bool atom.pol
+        end
+      end
+      in
+      cy##add node 
+    | _ -> ());
+  let edge_list = Graph.edge_tuple_list graph.edges in
+  List.iter edge_list ~f:(fun (src, trgt) ->
+    let edge = object%js
+      val group = Js.string "edges"
+      val data = object%js
+        val source = Int.to_string src.id |> Js.string
+        val target = Int.to_string trgt.id |> Js.string
+      end
+    end
+    in
+    (Js.Unsafe.coerce cy)##add edge)
+
+let recompose () =
+  let cy = Js.Unsafe.js_expr "cy2" in
+  let root_arr = cy##nodes (Js.string ".root") |> Js.to_array in 
+  if Array.is_empty root_arr then () else
+  let root = Array.get root_arr 0 in
+  let tree = read_tree root in
+  let graph = Tree.tree_to_graph tree in
+
+  let cy1 = Js.Unsafe.js_expr "cy1" in
+  let removed = cy1##elements##remove in
+  let () = cy1##.changes##push ([|Js.Unsafe.inject (Js.string "remove"); removed|] |> Js.array) in
+  let () = draw_graph cy1 graph in
+  let () = cy1##.changes##push ([|Js.Unsafe.inject (Js.string "replace"); cy1##elements|] |> Js.array) in
+  Js.Unsafe.global##cleanLayout(cy1)
+
 
 let getTreeJson () =
   Js.Unsafe.global##.tree
@@ -158,5 +246,6 @@ let getTreeJson () =
 let _ = Js.export_all (object%js
   method decompose = decompose ()
   method getTreeJson = getTreeJson ()
+  method recompose = recompose ()
   end)
 

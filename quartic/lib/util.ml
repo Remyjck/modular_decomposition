@@ -15,3 +15,8 @@ let index elem l =
       if h = elem then i else index_r elem t (i+1)
   in
   index_r elem l 0
+
+(** Given [string] of the form [[0-9]*-rep], return the integer written without the "rep" *)
+let remove_rep string = 
+  let () = assert (Stdlib.String.ends_with ~suffix:"-rep" string) in
+  Base.String.lsplit2_exn string ~on:'-' |> fst |> Base.Int.of_string

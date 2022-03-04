@@ -136,13 +136,16 @@ cy1.on('click', "node", function(evt){
     };
 });
 
-function cleanLayout() {
-    cy1.layout({
-        name: 'cose-bilkent',
-        animate: false,
-        idealEdgeLength: 120,
-    }).run();
-    cy1.center();
+function cleanLayout(cy) {
+    if (cy == cy1) {
+        cy.layout({
+            name: 'cose-bilkent',
+            animate: false,
+            idealEdgeLength: 120,
+        }).run();
+    };
+    cy.center();
+    cy.fit(10);
 };
 
 function undo(cy) {
@@ -158,8 +161,8 @@ function undo(cy) {
     }
     if (change == "replace") {
         eles.remove();
-        undo();
-        cleanLayout();
+        undo(cy);
+        cleanLayout(cy);
         return;
     }
 };
