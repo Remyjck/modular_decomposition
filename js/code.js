@@ -44,11 +44,19 @@ cy1.on('mousemove', function(mouseMoveEvent){
     mousePosition1.y = mouseMoveEvent.renderedPosition.y;
 }, false);
 
-let total_nodes = cy1.nodes().length;
+function getMaxId(cy) {
+    let max_id = 0;
+    cy.nodes().forEach(n => {
+        const id = parseInt(n.id(), 10);
+        if (id) {max_id = Math.max(max_id, id)};
+    });
+    return max_id;
+};
 
+let max_id = getMaxId(cy1);
 function freshID() {
-    total_nodes += 1;
-    return total_nodes.toString();
+    max_id += 1;
+    return max_id.toString();
 }
 
 function isAlphaNumeric(string) {
@@ -64,11 +72,17 @@ cy_div.addEventListener("mouseover", function(evt){
     isMouseOver = true;
 });
 
-document.addEventListener('keyup', function(evt) {
-    evt = evt || window.event;
-    const string = evt.key;
-    if (isAlphaNumeric(string) && isMouseOver) {
-        const offsets = document.getElementById('cy1').getBoundingClientRect();
+let isMouseOver2 = false;
+const cy_div2 = document.getElementById('cy2');
+cy_div2.addEventListener("mouseleave", function(evt){
+    isMouseOver2 = false;
+});
+cy_div2.addEventListener("mouseover", function(evt){
+    isMouseOver2 = true;
+});
+
+function keyPressCy1(string) {
+    if (isAlphaNumeric(string)) {
         const node = {
             group: 'nodes',
             data: {
@@ -90,20 +104,35 @@ document.addEventListener('keyup', function(evt) {
         const removed = cy1.elements(':selected').remove();
         cy1.changes.push(["remove", removed]);
     }
+};
+
+document.addEventListener('keyup', function(evt) {
+    evt = evt || window.event;
+    const string = evt.key;
+    if (isMouseOver) {keyPressCy1(string)};
+    if (isMouseOver2) {keyPressCy2(string)};
 });
+
+function negate(node) {
+    if (node.data('label') == "⅋") {node.data('label', "⊗"); return};
+    if (node.data('label') == "⊗") {node.data('label', "⅋"); return};
+    const polarisation = node.data('polarisation');
+    if (typeof polarisation == undefined) {node.data('polarisation', false)}
+    else {
+        node.data('polarisation', !polarisation);
+    };
+};
 
 cy1.on('cxttap', "node", function(evt) {
     const node = evt.target;
     if (node.selected()){
         const selected = cy1.nodes(':selected');
         for (n of selected){
-            const pol = n.data('polarisation');
-            n.data('polarisation', !pol);
+            negate(n);
         }
     }
     else {
-        const pol = node.data('polarisation');
-        node.data('polarisation', !pol);
+        negate(node);
     }
 });
 
@@ -122,6 +151,7 @@ function addEdges(cy, node, selected) {
     }
     const added = cy.add(to_add);
     cy.changes.push(["add", added]);
+    return added;
 };
 
 cy1.on('click', "node", function(evt){
@@ -235,12 +265,59 @@ function onReaderLoad(event) {
     const added_edges = cy1.add(edges_obj);
     const eles = added_nodes.union(added_edges);
     cy1.changes.push(["replace", eles]);
-    cleanLayout();
+    cleanLayout(cy1);
 }
 
 document.addEventListener("DOMContentLoaded", function(event) {
     document.getElementById('upload').addEventListener('change', onChange);
 });
+
+function changeEleId(cy, ogid, newid) {
+    const ele = cy.$id(ogid);
+    if (ele.group() == "edges") {
+        const new_ele = {
+            id: newid,
+            source: ele.source(),
+            target: ele.target
+        };
+        cy.batch(function(){
+            cy.remove(ele);
+            const added = cy.add(new_ele);
+            added.classes(ele.classes());
+        });
+    };
+    if (ele.group() == "nodes") {
+        const new_ele = { 
+            group: 'nodes',
+            data: {
+                id: newid,
+                label: ele.data('label'),
+            }
+        };
+        const polarisation = ele.data('polarisation');
+        if (typeof polarisation !== undefined) {new_ele.data.polarisation = polarisation};
+        if (ele.isChild()) {new_ele.data.parent = ele.data('parent')};
+        cy.batch(function(){
+            const removed = cy.remove(ele);
+            const added = cy.add(new_ele);
+            added.classes(ele.classes());
+            added.renderedPosition(ele.renderedPosition());
+            const edges = removed.edges();
+            edges.map(e => {
+                let src;
+                let tgt;
+                if (e.data('source') == ogid) {src = newid} else {src = e.data('source')};
+                if (e.data('target') == ogid) {tgt = newid} else {tgt = e.data('target')};
+                const new_edge = {
+                    group: 'edges',
+                    data: {id: e.id(), source: src, target: tgt},
+                };
+                const added = cy.add(new_edge);
+                added.classes(e.classes());
+            });
+        });
+    }
+}
 
 let cy2 = cytoscape({
     container: document.getElementById('cy2'),
@@ -261,7 +338,7 @@ let cy2 = cytoscape({
             'border-width': '1px',
             'label': function(ele){
                 var not;
-                if(!ele.data('polarisation')) {
+                if(!ele.data('polarisation') && ele.data('polarisation') !== undefined) {
                     not = '¬';
                 } 
                 else {not = ''};
@@ -314,6 +391,170 @@ let cy2 = cytoscape({
             'border-color': 'cornflowerblue',
             'border-width': '2px',
         }
+    },
+    {
+        selector: ':selected',
+        style: {
+            'background-color': 'deepskyblue',
+            'line-color': '#2B65EC',
+        }
     }]    
 });
 cy2.changes = [];
+
+let mousePosition2 = {x:0, y:0};
+cy2.on('mousemove', function(mouseMoveEvent){
+    mousePosition2.x = mouseMoveEvent.renderedPosition.x;
+    mousePosition2.y = mouseMoveEvent.renderedPosition.y;
+}, false);
+
+function keyPressCy2(string) {
+    console.log(string);
+    if (isAlphaNumeric(string) || string == "&" || string == "*" || string == "^") {
+        let label;
+        if (string == "&") {label = "⅋"} else
+        if (string == "*") {label = "⊗"} else
+        if (string == "^") {label = "prime"} else
+        {label = string};
+        const new_id = freshID2();
+        const node = {
+            group: 'nodes',
+            data: {
+                id: new_id,
+                label: label,
+                polarisation: true,
+            },
+            renderedPosition: {
+                x : mousePosition2.x,
+                y : mousePosition2.y,
+            },
+        };
+        const added = cy2.add(node);
+        cy2.changes.push(["add", added]);
+        
+        const selected = cy2.nodes(':selected');
+        if (selected.length == 1 && (selected[0].isParent() || selected[0].data('label') == "prime")) {
+            selected.data('label', "");
+            const id_rep = new_id + "-rep";
+            const rep_node = {
+                group: 'nodes',
+                data: {
+                    id: id_rep,
+                    label: "",
+                    parent: selected[0].id(),
+                },
+            };
+            const added_rep = cy2.add(rep_node);
+            added_rep.addClass('inCompound');
+
+            const rep_edge = {
+                data: {
+                    source: id_rep,
+                    target: new_id,
+                },
+            };
+            const added_rep_edge = cy2.add(rep_edge);
+            added_rep_edge.addClass('compoundOut');
+        }
+        return;
+    }
+
+    if (string == "Backspace") {
+        const removed = cy2.elements(':selected').remove();
+        cy2.changes.push(["remove", removed]);
+    }
+}
+
+let max_id2 = getMaxId(cy2);
+function freshID2() {
+    max_id2 += 1;
+    return max_id2.toString();
+}
+
+cy2.on('click', "node", function(evt){
+    const target = evt.target;
+    // If the target already has an incoming edge, do nothing
+    if (target.incomers().nonempty()) {return};
+
+    if (target.hasClass('root')) {return};
+
+    let selected = cy2.nodes(':selected');
+    // If there isn't exactly once selected node, do nothing
+    if (selected.length  != 1 || target.selected() || event.shiftKey) {return};
+
+    const source = selected[0];
+    // If source is an atom or a prime graph, do nothing
+    if (isAlphaNumeric(source.data('label')) || source.isParent()) {return};
+    if (target.successors()['+'](target).intersection(source.successors()['+'](source)).nonempty()) {return};
+
+    let classes = [];
+
+    if (source.isChild()) {
+        if (target.isChild()) {
+            // if they share the same parent, make the edge an inner edge, otherwise do nothing
+            if (target.data('parent') == source.data('parent')) { classes.push('compoundIn') }
+            else { return };
+        } 
+        // If the target is not a child, make the edge an outward edge and make the source a representative of the target
+        else {
+            if (source.outgoers().nonempty()) {return};
+            classes.push('compoundOut');
+            const new_source_id = target.id() + "-rep";
+            changeEleId(cy2, source.id(), new_source_id);
+            selected = [cy2.$id(new_source_id)];
+        };
+
+        // If the edge points from a child to its parent, do nothing
+        if (target.id() == source.data('parent')) {return};
+    }
+    // If the target is a child and the source is not a child, do nothing
+    else if (target.isChild()) {return};
+
+    cy2.batch(function() {
+    const added = addEdges(cy2, target, selected)[0];
+    added.addClass(classes);
+    cy2.nodes(":selected").unselect();
+    });
+});
+
+cy2.on('dblclick', "node", function(evt){
+    cy2.nodes().removeClass('root');
+    evt.target.addClass('root');
+    evt.target.unselect();
+    return;
+});
+
+cy2.on('cxttap', "node", function(evt) {
+    const node = evt.target;
+    if (node.selected()){
+        const selected = cy2.nodes(':selected');
+        for (n of selected){
+            negate(n);
+        }
+    }
+    else {
+        negate(node);
+    }
+});
+
+function connectedTo(root) {
+    let suc;
+    if (root.isParent()) {
+        const children = suc = root.children()
+        suc = children.successors()['u'](children);
+    }
+    else {suc = root.successors()};
+    const parents = suc.nodes("$node > node");
+    const parent_suc = parents.reduce(
+        (acc, parent) => acc.union(connectedTo(parent)),
+        cy2.collection()
+    );
+    return suc.union(parent_suc);
+}
+
+function checkConnected() {
+    const root = cy2.nodes('.root');
+    const reachable = connectedTo(root)['+'](root);
+    const unreachable = reachable.complement();
+    return unreachable.empty();
+}
