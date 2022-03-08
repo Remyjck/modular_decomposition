@@ -30,12 +30,6 @@
     flex-direction: column;
 }
 
-#decompose {
-    height: 100px;
-    width: 40%;
-    margin: auto;
-}
-
 button {
     padding-right: 0px;
     padding-left: 0px;

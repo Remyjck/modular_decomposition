@@ -1,3 +1,5 @@
+let directed = false;
+
 let cy1 = cytoscape({
     container: document.getElementById('cy1'),
     wheelSensitivity: 0.2,
@@ -37,6 +39,28 @@ let cy1 = cytoscape({
     }]    
 });
 cy1.changes = [];
+
+const undirected_stylesheet = {
+    'curve-style': 'haystack',
+    'control-point-step-size': 0,
+    'target-arrow-shape': 'none',
+};
+
+const directed_stylesheet = {
+    'curve-style': 'bezier',
+    'control-point-step-size': 40,
+    'target-arrow-shape': 'triangle',
+};
+
+function toggleDirected() {
+    const stylesheet = directed ? undirected_stylesheet : directed_stylesheet;
+    cy1.style().selector('edge').style(stylesheet).update();
+    directed = !directed;
+
+    const btn = document.getElementById('ditoggle');
+    const disp = directed ? "undirected" : "directed";
+    btn.innerText = "Make graph " + disp;
+};
 
 let mousePosition1 = {x:0, y:0};
 cy1.on('mousemove', function(mouseMoveEvent){
@@ -136,16 +160,18 @@ cy1.on('cxttap', "node", function(evt) {
     }
 });
 
-function addEdges(cy, node, selected) {
-    const target = node.data('id');
+function addEdges(cy, target, selected) {
+    const target_id = target.data('id');
     let to_add = [];
     for (const source of selected) {
-        if (node.edgesWith(source).length > 0) {continue};
+        if (cy == cy1 && directed) { if (source.edgesTo(target).length > 0) {continue}}
+        else if (source.edgesWith(target).length > 0) {continue};
+        console.log("added edge");
         to_add.push({
             group: 'edges',
             data: {
                 source: source.data('id'),
-                target: target,
+                target: target_id,
             }
         })
     }
