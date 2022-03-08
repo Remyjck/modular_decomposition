@@ -270,3 +270,17 @@ let rec process graph state =
         ~f:(fun graph (node, h) -> condense_prime node h graph state)
     in
     process prime_condensed_graph state
+
+let isPrime graph =
+  let cliques_and_in = cc_and_is graph in 
+  if Set.is_empty cliques_and_in then
+    let min_cond = condensible_subgraphs graph in
+    if Set.is_empty min_cond then
+      true
+    else
+      if Set.length min_cond = 1 && Set.length (Set.choose_exn min_cond) = Set.length graph.nodes then
+        true
+      else
+        false
+  else
+    false

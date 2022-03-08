@@ -239,6 +239,24 @@ let recompose () =
   let () = cy1##.changes##push ([|Js.Unsafe.inject (Js.string "replace"); cy1##elements|] |> Js.array) in
   Js.Unsafe.global##cleanLayout(cy1)
 
+let isPrimeIdGraph idGraph =
+  let jsnode_list = idGraph##nodes |> Js.to_array |> Array.to_list in
+  let jsedge_list = idGraph##edges |> Js.to_array |> Array.to_list in
+  let node_list = List.map jsnode_list ~f:(fun n ->
+    let label = n##id |> Js.to_string in
+    let id =  Util.remove_rep label in
+    let atom = Graph.Atom {Graph.label = label; pol = true} in
+    {Graph.connective = atom; id = id})
+  in
+  let edge_list = List.map jsedge_list ~f:(fun e ->
+    let source_id = e##data (Js.string "source") |> Js.to_string |> Util.remove_rep in
+    let target_id = e##data (Js.string "target") |> Js.to_string |> Util.remove_rep in
+    let source = List.find_exn node_list ~f:(fun v -> v.id = source_id) in
+    let target = List.find_exn node_list ~f:(fun v -> v.id = target_id) in
+    (source, target))
+  in
+  let graph, _ = Graph.to_graph node_list edge_list in
+  Condense.isPrime graph
 
 let getTreeJson () =
   Js.Unsafe.global##.tree
@@ -247,5 +265,6 @@ let _ = Js.export_all (object%js
   method decompose = decompose ()
   method getTreeJson = getTreeJson ()
   method recompose = recompose ()
+  method isPrime graph = isPrimeIdGraph graph
   end)
 

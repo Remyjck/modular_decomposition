@@ -473,8 +473,6 @@ function freshID2() {
 
 cy2.on('click', "node", function(evt){
     const target = evt.target;
-    // If the target already has an incoming edge, do nothing
-    if (target.incomers().nonempty()) {return};
 
     if (target.hasClass('root')) {return};
 
@@ -485,7 +483,6 @@ cy2.on('click', "node", function(evt){
     const source = selected[0];
     // If source is an atom or a prime graph, do nothing
     if (isAlphaNumeric(source.data('label')) || source.isParent()) {return};
-    if (target.successors()['+'](target).intersection(source.successors()['+'](source)).nonempty()) {return};
 
     let classes = [];
 
@@ -507,12 +504,19 @@ cy2.on('click', "node", function(evt){
         // If the edge points from a child to its parent, do nothing
         if (target.id() == source.data('parent')) {return};
     }
-    // If the target is a child and the source is not a child, do nothing
-    else if (target.isChild()) {return};
+    else {
+        // If the target is a child and the source is not a child, do nothing
+        if (target.isChild()) {return};
+
+        // If the target already has an incoming edge, do nothing
+        if (target.incomers().nonempty()) {return};
+
+        if (target.successors()['+'](target).intersection(source.successors()['+'](source)).nonempty()) {return};
+    };
 
     cy2.batch(function() {
     const added = addEdges(cy2, target, selected)[0];
-    added.addClass(classes);
+    if (added) {added.addClass(classes)};
     cy2.nodes(":selected").unselect();
     });
 });
@@ -558,3 +562,26 @@ function checkConnected() {
     const unreachable = reachable.complement();
     return unreachable.empty();
 }
+
+function checkPrime() {
+    const parents = cy2.nodes('$node > node');
+    return parents.reduce(
+        (acc, parent) => {
+            if (acc) {
+                const children = parent.children();
+                const graph = children.union(children.connectedEdges('.compoundIn'));
+                return isPrime(graph);
+            }
+            else {return false};
+        },
+        true
+    );
+};
+
+function getGraph() {
+    if (checkConnected()) {
+        if (checkPrime()) {
+            recompose();
+        }
+    }
+};
