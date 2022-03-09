@@ -48,13 +48,14 @@ const undirected_stylesheet = {
 
 const directed_stylesheet = {
     'curve-style': 'bezier',
-    'control-point-step-size': 40,
+    'control-point-step-size': 20,
     'target-arrow-shape': 'triangle',
 };
 
 function toggleDirected() {
     const stylesheet = directed ? undirected_stylesheet : directed_stylesheet;
     cy1.style().selector('edge').style(stylesheet).update();
+    cy2.style().selector('.compoundIn').style(stylesheet).update();
     directed = !directed;
 
     const btn = document.getElementById('ditoggle');
@@ -164,7 +165,10 @@ function addEdges(cy, target, selected) {
     const target_id = target.data('id');
     let to_add = [];
     for (const source of selected) {
-        if (cy == cy1 && directed) { if (source.edgesTo(target).length > 0) {continue}}
+        if (directed && (cy == cy1 ||
+            (cy == cy2 && target.isChild() && selected[0].isChild()))) {
+                if (source.edgesTo(target).length > 0) {continue}
+        }
         else if (source.edgesWith(target).length > 0) {continue};
         console.log("added edge");
         to_add.push({
