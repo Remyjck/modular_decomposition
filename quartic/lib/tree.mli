@@ -18,4 +18,4 @@ val successors : tree -> tree list
 
 val tree_from_condensed : Graph.graph -> Graph.state -> tree option
 
-val tree_to_graph : tree -> Graph.graph
+val tree_to_graph : ?directed:bool -> tree -> Graph.graph

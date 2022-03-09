@@ -81,11 +81,14 @@ let tree_from_condensed (graph : Graph.graph) state =
       let tree_list = trees_from_id_list id_graph.nodes state in
       Some {connective = Prime (id_graph, tree_list); id = root.id}
 
-let tree_to_graph tree = 
-  let join_sets vs1 vs2 = 
+let tree_to_graph ?directed tree = 
+  let join_sets ?symmetric vs1 vs2 = 
     Set.fold vs1 ~init:([]) ~f:(fun li vi ->
       Set.fold vs2 ~init:(li) ~f:(fun lj vj ->
-        (vi, vj) :: lj))
+        match symmetric with
+        | None -> (vi, vj) :: lj
+        | Some bool -> if bool then (vi, vj) :: (vj, vi) :: lj else
+          (vi, vj) :: lj))
   in
   let rec tree_to_graph_r tree = 
     match tree.connective with
@@ -107,7 +110,7 @@ let tree_to_graph tree =
         ~f:(fun (vsetacc, elacc) (vset, el) ->
           let vertices = Set.union vsetacc vset in
           let edge_base = el @ elacc in
-          let edges = join_sets vsetacc vset in
+          let edges = join_sets ?symmetric:directed vsetacc vset in
           vertices, edges @ edge_base)
       in
       nodes, edges
@@ -127,5 +130,7 @@ let tree_to_graph tree =
       vertices, new_edges @ edges
   in
   let vertices, edges = tree_to_graph_r tree in
-  let edge_map = Graph.edge_map edges in
+  let () = List.iter edges ~f:(fun (v1, v2) -> Stdio.printf "%d %d\n" v1.id v2.id) in
+  let () = Stdio.printf "\n" in
+  let edge_map = Graph.edge_map ?directed edges in
   {Graph.nodes = vertices; edges = edge_map}

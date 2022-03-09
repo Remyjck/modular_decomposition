@@ -194,14 +194,18 @@ let is_module g h =
       let v_connected = w g h v in
       Set.equal connected v_connected)
 
-(** [edge_tuple_list edges]: given a mapping [edges], return a corresponding 
-    list of edges (non-repeating) *)
-let rec edge_tuple_list edge_map =
+(** [edge_tuple_list ?directed edges]: given a mapping [edges], return a corresponding 
+    list of edges (non-repeating, unless [directed] is true) *)
+let rec edge_tuple_list ?directed edge_map =
   if Map.is_empty edge_map then
     []
   else
     let vi, vi_neighbours = Map.min_elt_exn edge_map in
-    let new_edge_map = remove_vertex_edges vi edge_map in
+    let new_edge_map = match directed with
+    | None -> remove_vertex_edges vi edge_map
+    | Some bool -> if bool then Map.remove edge_map vi else
+      remove_vertex_edges vi edge_map
+    in
     let new_edges = Set.fold vi_neighbours
       ~init:[]
       ~f:(fun accum vj -> (vi, vj) :: accum) in
@@ -212,26 +216,30 @@ let add_or_init v y =
   | None -> Some (Set.singleton (module Vertex) y)
   | Some z -> Some (Set.add z y)
 
-(** [edge_map edge_tuple_list]: given a list of edges [edge_tuple_list], 
-    return a corresponding mapping *)
-let edge_map edge_tuple_list =
+(** [edge_map ?directed edge_tuple_list]: given a list of edges [edge_tuple_list], 
+    return a corresponding mapping, if [directed] then the mapping is asymmetrical *)
+let edge_map ?directed edge_tuple_list =
   let rec edge_list_to_map edges map = 
     match edges with
     | [] -> map
     | (x, y) :: t -> 
       let map1 = Map.change map x ~f:(fun v -> add_or_init v y) in
-      let map2 = Map.change map1 y ~f:(fun v -> add_or_init v x) in
+      let map2 = match directed with
+        | None -> Map.change map1 y ~f:(fun v -> add_or_init v x)
+        | Some bool -> if bool then map1 else
+          Map.change map1 y ~f:(fun v -> add_or_init v x)
+      in
       edge_list_to_map t map2
   in
   edge_list_to_map edge_tuple_list (Map.empty (module Vertex))
 
-let to_graph vertex_list edge_list = 
+let to_graph ?directed vertex_list edge_list = 
   let vertices, max_id = List.fold vertex_list
     ~init:(Set.empty (module Vertex), 0)
     ~f:(fun (acum, max) v ->
       (Set.add acum v), (Int.max max v.id))
   in
-  let edges = edge_map edge_list in
+  let edges = edge_map ?directed edge_list in
   {nodes=vertices; edges=edges}, {total_vertices=max_id; id_map=Hashtbl.create (module Int)}
 
 let vset_to_iset vset =
