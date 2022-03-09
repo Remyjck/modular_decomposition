@@ -130,7 +130,5 @@ let tree_to_graph ?directed tree =
       vertices, new_edges @ edges
   in
   let vertices, edges = tree_to_graph_r tree in
-  let () = List.iter edges ~f:(fun (v1, v2) -> Stdio.printf "%d %d\n" v1.id v2.id) in
-  let () = Stdio.printf "\n" in
   let edge_map = Graph.edge_map ?directed edges in
   {Graph.nodes = vertices; edges = edge_map}

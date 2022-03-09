@@ -209,7 +209,7 @@ let rec edge_tuple_list ?directed edge_map =
     let new_edges = Set.fold vi_neighbours
       ~init:[]
       ~f:(fun accum vj -> (vi, vj) :: accum) in
-    new_edges @ edge_tuple_list new_edge_map
+    new_edges @ edge_tuple_list ?directed:directed new_edge_map
 
 let add_or_init v y = 
   match v with

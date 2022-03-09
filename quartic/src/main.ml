@@ -213,7 +213,6 @@ let draw_graph ?directed cy (graph : Graph.graph) =
       cy##add node 
     | _ -> ());
   let edge_list = Graph.edge_tuple_list ?directed:directed graph.edges in
-  let () = List.iter edge_list ~f:(fun (v1, v2) -> Stdio.printf "%d %d\n" v1.id v2.id) in
   List.iter edge_list ~f:(fun (src, trgt) ->
     let edge = object%js
       val group = Js.string "edges"
