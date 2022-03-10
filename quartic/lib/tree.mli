@@ -4,10 +4,11 @@ type id_graph = {
 }
 
 type connective =
+  | Atom of Graph.atom
   | Tensor of tree list
   | Par of tree list
+  | Before of tree list
   | Prime of id_graph * (tree list)
-  | Atom of Graph.atom
 
 and tree = {
     connective : connective;

@@ -6,10 +6,11 @@ type id_graph = {
 }
 
 type connective =
+  | Atom of Graph.atom
   | Tensor of tree list
   | Par of tree list
+  | Before of tree list
   | Prime of id_graph * (tree list)
-  | Atom of Graph.atom
 
 and tree = {
     connective : connective;
@@ -21,6 +22,7 @@ let successors tree =
   | Atom _ -> []
   | Tensor tl -> tl
   | Par tl -> tl
+  | Before tl -> tl
   | Prime (_, tl) -> tl
 
 let remove_id id map =
@@ -45,41 +47,39 @@ let from_map map =
   in
   {nodes = nodes; edges = edges}
           
-let rec tree_from_id id (state : Graph.state) =
-  let vertex : Graph.vertex = Hashtbl.find_exn state.id_map id in
-  match vertex.connective with
-  | Graph.Atom atom -> {connective = Atom atom; id = vertex.id}
-  | Graph.Tensor iset -> 
-    let tree_list = trees_from_id_list (Set.elements iset) state in
-    {connective = Tensor tree_list; id = vertex.id}
-  | Graph.Par iset ->
-    let tree_list = trees_from_id_list (Set.elements iset) state in
-    {connective = Par tree_list; id = vertex.id}
-  | Graph.Prime map ->
-    let id_graph = from_map map in
-    let tree_list = trees_from_id_list id_graph.nodes state in
-    {connective = Prime (id_graph, tree_list); id = vertex.id}
 
-and trees_from_id_list id_list state =
-  List.map id_list ~f:(Util.flip tree_from_id state)
 
 let tree_from_condensed (graph : Graph.graph) state =
   let () = assert(Set.length graph.nodes <= 1) in
   match Set.choose graph.nodes with
     | None -> None 
     | Some root ->
-    match root.connective with
-    | Graph.Atom atom -> Some {connective = Atom atom; id = root.id}
-    | Graph.Tensor iset -> 
-      let tree_list = trees_from_id_list (Set.elements iset) state in
-      Some {connective = Tensor tree_list; id = root.id}
-    | Graph.Par iset ->
-      let tree_list = trees_from_id_list (Set.elements iset) state in
-      Some {connective = Par tree_list; id = root.id}
-    | Graph.Prime map ->
-      let id_graph = from_map map in
-      let tree_list = trees_from_id_list id_graph.nodes state in
-      Some {connective = Prime (id_graph, tree_list); id = root.id}
+      let rec tree_from_id id (state : Graph.state) =
+        let vertex : Graph.vertex = Hashtbl.find_exn state.id_map id in
+        match vertex.connective with
+        | Graph.Atom atom -> {connective = Atom atom; id = vertex.id}
+
+        | Graph.Tensor iset -> 
+          let tree_list = trees_from_id_list (Set.elements iset) state in
+          {connective = Tensor tree_list; id = vertex.id}
+
+        | Graph.Par iset ->
+          let tree_list = trees_from_id_list (Set.elements iset) state in
+          {connective = Par tree_list; id = vertex.id}
+
+        | Graph.Before ilist ->
+          let tree_list = trees_from_id_list ilist state in
+          {connective = Before tree_list; id = vertex.id}
+
+        | Graph.Prime map ->
+          let id_graph = from_map map in
+          let tree_list = trees_from_id_list id_graph.nodes state in
+          {connective = Prime (id_graph, tree_list); id = vertex.id}
+
+      and trees_from_id_list id_list state =
+        List.map id_list ~f:(Util.flip tree_from_id state)
+      in
+      Some (tree_from_id root.id state)
 
 let tree_to_graph ?directed tree = 
   let join_sets ?symmetric vs1 vs2 = 
@@ -111,6 +111,17 @@ let tree_to_graph ?directed tree =
           let vertices = Set.union vsetacc vset in
           let edge_base = el @ elacc in
           let edges = join_sets ?symmetric:directed vsetacc vset in
+          vertices, edges @ edge_base)
+      in
+      nodes, edges
+    
+    | Before tl ->
+      let nel = List.map tl ~f:(tree_to_graph_r) in
+      let nodes, edges = List.fold nel ~init:(Set.empty (module Graph.Vertex), [])
+        ~f:(fun (vsetacc, elacc) (vset, el) ->
+          let vertices = Set.union vsetacc vset in
+          let edge_base = el @ elacc in
+          let edges = join_sets ~symmetric:false vsetacc vset in
           vertices, edges @ edge_base)
       in
       nodes, edges

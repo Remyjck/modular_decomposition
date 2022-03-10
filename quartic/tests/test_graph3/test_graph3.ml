@@ -35,9 +35,13 @@ let%test _ = Set.length prime_condensed_graph.nodes = 2
 
 let res = Condense.condense_cliques prime_condensed_graph state
 let%test _ = Set.length res.nodes = 1
+let () =
+  let root = Set.choose_exn res.nodes in
+  Hashtbl.add_exn state.id_map ~key:root.id ~data:root
 
 let res2 = Condense.process graph2 state2
 let%test _ = Graph.VSet.equal res.nodes res2.nodes
+let%test _  = Hashtbl.equal (Graph.Vertex.equal) state.id_map state2.id_map
 
 let tree = Tree.tree_from_condensed res state |> Option.value_exn
 

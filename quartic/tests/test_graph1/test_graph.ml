@@ -6,6 +6,7 @@ let js_obj =
     Yojson.Basic.from_string s
 
 let graph, state = Parsegraph.parse js_obj
+let graph2, state2 = Parsegraph.parse js_obj
 
 let vertex = {Graph.connective = Atom {label = "new"; pol = true}; id = Graph.fresh_id state}
 let%test _ = vertex.id = 9
@@ -16,6 +17,7 @@ let%test _ = Set.mem graph.nodes vertex
 let graph = Graph.remove_vertex vertex graph
 let%test _ = Set.mem graph.nodes vertex |> not
 
+let () = state.total_vertices <- state.total_vertices - 1
 
 let vset1, vset2 = Set.partition_tf graph.nodes ~f:(fun v -> v.id % 2 = 0)
 let%test _ = Graph.disjoint vset1 vset2
@@ -101,6 +103,13 @@ let res =
     ~init:condensed_graph 
     ~f:(fun graph (node, h) -> Condense.condense_prime node h graph state)
 let%test _ = Set.length res.nodes = 1
+let () = 
+  let root = Set.choose_exn res.nodes in
+  Hashtbl.add_exn state.id_map ~key:(root.id) ~data:(root)
+
+let res2 = Condense.process graph2 state2
+let%test _ = Graph.VSet.equal res.nodes res2.nodes
+let%test _  = Hashtbl.equal (Graph.Vertex.equal) state.id_map state2.id_map
 
 let tree = Tree.tree_from_condensed res state |> Option.value_exn
 

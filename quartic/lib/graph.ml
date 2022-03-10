@@ -20,6 +20,7 @@ type node =
   | Atom of atom
   | Tensor of ISet.t
   | Par of ISet.t
+  | Before of int list
   | Prime of IMap.t
   [@@deriving compare, sexp, hash]
 

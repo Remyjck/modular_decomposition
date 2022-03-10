@@ -80,6 +80,9 @@ let rec draw_tree cy (tree : Tree.tree) =
     | Par tl ->
       let id_list = List.map tl ~f:(draw_tree cy) in
       Js.string "⅋", Js.bool true, Some id_list
+    | Before tl ->
+      let id_list = List.map tl ~f:(draw_tree cy) in
+      Js.string "◃", Js.bool true, Some id_list
     | Prime (_, tl) ->
       let id_list = List.map tl ~f:(draw_tree cy) in
       Js.string "", Js.bool true, Some id_list
