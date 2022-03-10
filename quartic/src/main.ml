@@ -139,7 +139,9 @@ let decompose () =
   let edges_arr = (Js.Unsafe.coerce (get_edges_arr cy)) |> Js.to_array in
   let edge_list = Array.map edges_arr ~f:(to_edge vertices) |> Array.to_list in
 
-  let (graph, state) = Graph.to_graph vertices edge_list in
+
+  let directed = Js.Unsafe.js_expr "directed" |> Js.to_bool in
+  let (graph, state) = Graph.to_graph ~directed:directed vertices edge_list in
   let condensed_graph = Condense.process graph state in
   let tree = Tree.tree_from_condensed condensed_graph state in
 
@@ -195,8 +197,14 @@ and read_tree root =
   let connective =
     if String.equal label_string "⊗" then 
       Tree.Tensor tl
-    else
-      Tree.Par tl
+    else 
+      if String.equal label_string "◃" then
+        Tree.Before tl
+      else
+        if String.equal label_string "⅋" then
+          Tree.Par tl
+        else
+          raise_s (Sexp.message "error" [])
   in
   {Tree.connective = connective; id = id}
 

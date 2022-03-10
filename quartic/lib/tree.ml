@@ -81,6 +81,7 @@ let tree_from_condensed (graph : Graph.graph) state =
       in
       Some (tree_from_id root.id state)
 
+(** [tree_to_graph ?directed tree] converts a tree to a graph, using [directed] to specify if the tree is directed *)
 let tree_to_graph ?directed tree = 
   let join_sets ?symmetric vs1 vs2 = 
     Set.fold vs1 ~init:([]) ~f:(fun li vi ->
@@ -117,14 +118,16 @@ let tree_to_graph ?directed tree =
     
     | Before tl ->
       let nel = List.map tl ~f:(tree_to_graph_r) in
-      let nodes, edges = List.fold nel ~init:(Set.empty (module Graph.Vertex), [])
-        ~f:(fun (vsetacc, elacc) (vset, el) ->
-          let vertices = Set.union vsetacc vset in
-          let edge_base = el @ elacc in
-          let edges = join_sets ~symmetric:false vsetacc vset in
-          vertices, edges @ edge_base)
+      let rec linearize nel =
+        match nel with
+        | [] -> (Set.empty (module Graph.Vertex), [])
+        | [(nodes, edges)] -> (nodes, edges)
+        | (n1, e1) :: (n2, e2) :: t -> 
+          let nedges = join_sets ~symmetric:false n1 n2 in
+          let nodes, edges = linearize ((n2, e2) :: t) in
+          (Set.union n1 nodes, nedges @ e1 @ edges)
       in
-      nodes, edges
+      linearize nel
 
     | Prime (id_graph, tl) ->
       let vertices, edges, id_map = List.fold tl ~init:(Set.empty (module Graph.Vertex), [], Map.empty (module Int))
