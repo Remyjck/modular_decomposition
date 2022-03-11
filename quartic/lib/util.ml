@@ -20,3 +20,7 @@ let index elem l =
 let remove_rep string = 
   let () = assert (Stdlib.String.ends_with ~suffix:"-rep" string) in
   Base.String.lsplit2_exn string ~on:'-' |> fst |> Base.Int.of_string
+
+let resolve = function
+  | None -> false
+  | Some bool -> bool

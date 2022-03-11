@@ -33,6 +33,15 @@ type vertex = {
 module Vertex = struct
   module T = struct
     type t = vertex [@@deriving compare, sexp, hash]
+    let show t =
+      let () = match t.connective with
+        | Atom atom -> Stdio.printf "%s" atom.label
+        | Tensor _ -> Stdio.printf "Tensor"
+        | Par _ -> Stdio.printf "Par"
+        | Before _ -> Stdio.printf "Before"
+        | Prime _ -> Stdio.printf "Prime"
+      in
+      Stdio.printf " %d" t.id
   end
   include T
   include Comparable.Make(T)
@@ -62,7 +71,15 @@ end
 type graph = {
     nodes : VSet.t;
     edges : VMap.t;
+    edges_from : VMap.t;
   }
+
+let show graph =
+  let () = Stdio.printf "Nodes: "; Set.iter graph.nodes ~f:(fun v -> Stdio.printf "%d " v.id); Stdio.printf "\n"; in
+  Stdio.printf "Edges: \n"; Map.iteri graph.edges ~f:(fun ~key:k ~data:d -> 
+    Stdio.printf "\t%d: " k.id;
+    Set.iter d ~f:(fun v -> Stdio.printf "%d, " v.id);
+    Stdio.printf "\n")
 
 type state = {
   mutable total_vertices : int;
@@ -80,35 +97,46 @@ let add_vertices_to_hash vertices state =
 (** [add_vertex vertex graph]: remove [vertex] from [graph] in both the nodes 
     and edges *)
 let add_vertex vertex graph =
-  {nodes = Set.add graph.nodes vertex; edges = graph.edges}
+    {nodes = Set.add graph.nodes vertex; edges = graph.edges; edges_from = graph.edges_from}
 
 (** [remove_vertex vertex edges]: given a mapping [edges], remove [vertex] from 
     its keys and values  *)
 let remove_vertex_edges v edges =
   Map.remove edges v |> Map.map ~f:(Util.flip Set.remove v)
 
+let remove_vertices_edges vertices edges = 
+  Set.fold vertices ~init:edges ~f:(fun accum v -> remove_vertex_edges v accum)
+
 let remove_vertex v graph =
   let new_nodes = Set.remove graph.nodes v in
   let new_edges = remove_vertex_edges v graph.edges in 
-  {nodes = new_nodes; edges = new_edges}
+  let new_edges_from = remove_vertex_edges v graph.edges_from in
+  {nodes = new_nodes; edges = new_edges; edges_from = new_edges_from}
 
 let disjoint s1 s2 =
   let diff = Set.diff s1 s2 in (* O(l1 + l2) *)
   Set.equal s1 diff (* O(l1 + l2) *)
 
+let complement_map set map =
+  Map.filter_keys map ~f:(fun ele -> Set.mem set ele |> not)
+  |> Map.map ~f:(Util.flip Set.diff set)
+
 (** [<~> graph vertices]: subgraph of [graph] that contains all vertices not in 
     [vertices] *)
 let (<~>) graph vertices =
   let nodes = Set.diff graph.nodes vertices in
-  let edges =
-    Map.filter_keys graph.edges ~f:(fun v -> not (Set.mem vertices v))
-    |> Map.map ~f:(fun s -> Set.diff s vertices)
-  in
-  {nodes = nodes; edges = edges}
+  let edges = complement_map vertices graph.edges in
+  let edges_from = complement_map vertices graph.edges_from in
+  {nodes = nodes; edges = edges; edges_from = edges_from}
 
-(** [connected graph vertices]: set of vertices to which [vertices] is 
+let find_or_empty map v =
+  match Base.Map.find map v with 
+  | None -> Base.Set.empty (module Vertex)
+  | Some vset -> vset
+
+(** [successors graph vertices]: set of vertices to which [vertices] is 
     connected *)
-let connected graph vertices =
+let successors graph vertices =
     Set.fold vertices
       ~init:(Set.empty (module Vertex))
       ~f:(fun accum v -> 
@@ -120,60 +148,96 @@ let connected graph vertices =
         Set.union accum to_add)
     |> Util.flip Set.diff vertices
 
+let predecessors graph vertices = 
+    Set.fold vertices
+      ~init:(Set.empty (module Vertex))
+      ~f:(fun accum v -> 
+        let to_add = 
+          match Map.find graph.edges_from v with
+          | None -> Set.empty (module Vertex)
+          | Some vset -> vset
+        in
+        Set.union accum to_add)
+    |> Util.flip Set.diff vertices
+
+let connected graph vertices =
+  Set.union (successors graph vertices) (predecessors graph vertices)
+
+let neighbour graph vertex =
+  let edges_to = match Map.find graph.edges vertex with
+    | None -> Set.empty (module Vertex)
+    | Some set -> set
+  in
+  let edges_from = match Map.find graph.edges_from vertex with
+    | None -> Set.empty (module Vertex)
+    | Some set -> set
+  in
+  Set.union edges_to edges_from
+
+let neighbours graph vertices =
+  Set.union (successors graph vertices) (predecessors graph vertices)
+
 (** [replace graph vertices vertex]: replace all vertices in [vertices] by 
     [vertex] in [graph] *)
 let replace graph h vertex state =
   let () = assert(Set.is_subset h ~of_:graph.nodes) in
   let () = add_vertices_to_hash h state in
-  let new_neighbours = connected graph h in
+  (* let () = Stdio.printf "Replacing { "; Set.iter h ~f:(fun v -> Stdio.printf "%d " v.id); Stdio.printf "} with:\n";
+    Vertex.show vertex; Stdio.printf "\n"
+  in *)
   let new_nodes = Set.diff graph.nodes h |> Util.flip Set.add vertex in
-  let removed_keys =
-    Map.filter_keys graph.edges ~f:(fun v -> not (Set.mem h v))
+  let removed_edges = remove_vertices_edges h graph.edges in
+  let removed_edges_from = remove_vertices_edges h graph.edges_from in
+
+  let new_successors = successors graph h |> Util.flip Set.diff h in
+  let new_predecessors = predecessors graph h |> Util.flip Set.diff h in
+  let new_edges = Map.update removed_edges vertex ~f:(function 
+    | None -> new_successors
+    | Some vset -> Set.union vset new_successors)
   in
-  let removed_edges = 
-    Map.map removed_keys 
-    ~f:(fun s -> 
-      if disjoint s h then
-        s
-      else
-        Set.add s vertex |> Util.flip Set.diff h)
+  let new_edges = Set.fold new_successors ~init:new_edges ~f:(fun accum v ->
+    Map.update accum v ~f:(function
+      | None -> Set.singleton (module Vertex) vertex
+      | Some vset -> Set.add vset vertex))
   in
-  let new_edges = Map.add_exn removed_edges ~key:vertex ~data:new_neighbours in
-  {nodes = new_nodes; edges = new_edges}
+  let new_edges_from = Map.update removed_edges_from vertex ~f:(function
+    | None -> new_predecessors
+    | Some vset -> Set.union vset new_predecessors)
+  in
+  let new_edges_from = Set.fold new_predecessors ~init:new_edges_from ~f:(fun accum v ->
+    Map.update accum v ~f:(function
+      | None -> Set.singleton (module Vertex) vertex
+      | Some vset -> Set.add vset vertex))
+  in 
+  {nodes = new_nodes; edges = new_edges; edges_from = new_edges_from}
 
 (** [connect_vertices vertices vertex graph]: for a given [graph],
-    add [vertex] to the neighbourhoods of all vertices in [vertices]*)
-let connect_vertices vertices vertex graph =
+    add edges connecting every element of [vertices] to [vertex] *)
+let connect_vertices ?directed vertices vertex graph =
   let () = assert(Set.mem graph.nodes vertex) in
   let () = assert(Set.for_all vertices ~f:(Set.mem graph.nodes)) in
-  let updated_vertex_neighbours = 
-    Map.update graph.edges vertex
-      ~f:(fun vset ->
-        match vset with
-        | None -> vertices
-        | Some vset -> (Set.union vset vertices))
+  let edges = Set.fold vertices ~init:graph.edges ~f:(fun accum v ->
+    Map.update accum v ~f:(function
+    | None -> Set.singleton (module Vertex) vertex
+    | Some vset -> Set.add vset vertex))
   in
-  let updated_vertices_neighbours =
-    Set.fold 
-      vertices
-      ~init:updated_vertex_neighbours
-      ~f:(fun accum v ->
-        Map.update accum v 
-          ~f:(fun vset ->
-            match vset with
-            | None -> Set.singleton (module Vertex) vertex
-            | Some vset -> Set.add vset vertex))
-  in
-  {nodes = graph.nodes; edges = updated_vertices_neighbours}
+  if Util.resolve directed then
+    let edges_from = Map.update graph.edges_from vertex ~f:(function | None -> vertices | Some vset -> Set.union vset vertices) in
+    {nodes=graph.nodes; edges=edges; edges_from=edges_from}
+  else
+    let edges = Map.update edges vertex ~f:(function | None -> vertices | Some vset -> (Set.union vset vertices)) in
+    {nodes=graph.nodes; edges=edges; edges_from=edges}
+        
+let intersect_map set map =
+  Map.filter_keys map ~f:(Set.mem set)
+  |> Map.map ~f:(Util.flip Set.inter set)
 
 (** [induced_subgraph graph vertices]: subgraph of [graph] that contains only 
     the vertices in [vertices]  *)
 let induced_subgraph graph vertices =
-  let edges = 
-    Map.filter_keys graph.edges ~f:(fun v -> Set.mem vertices v)
-    |> Map.map ~f:(fun s -> Set.inter s vertices)
-  in
-  {nodes = vertices; edges = edges}
+  let edges = intersect_map vertices graph.edges in
+  let edges_from = intersect_map vertices graph.edges_from in
+  {nodes = vertices; edges = edges; edges_from = edges_from}
 
 (** [w G H h]: set of vertices of [G <~> H] to which [h] is connected *)
 let w g h v =
@@ -195,44 +259,60 @@ let is_module g h =
       let v_connected = w g h v in
       Set.equal connected v_connected)
 
-(** [edge_tuple_list ?directed edges]: given a mapping [edges], return a corresponding 
-    list of edges (non-repeating, unless [directed] is true) *)
-let rec edge_tuple_list ?directed edge_map =
+(** [edge_tuple_list ?directed edges]: given a mapping [edges],
+    return a corresponding list of edges  *)
+let rec edge_tuple_list edge_map =
   if Map.is_empty edge_map then
     []
   else
     let vi, vi_neighbours = Map.min_elt_exn edge_map in
-    let new_edge_map = match directed with
-    | None -> remove_vertex_edges vi edge_map
-    | Some bool -> if bool then Map.remove edge_map vi else
-      remove_vertex_edges vi edge_map
-    in
     let new_edges = Set.fold vi_neighbours
       ~init:[]
-      ~f:(fun accum vj -> (vi, vj) :: accum) in
-    new_edges @ edge_tuple_list ?directed:directed new_edge_map
+      ~f:(fun accum vj -> (vi, vj) :: accum) 
+    in
+    let new_edge_map = remove_vertex_edges vi edge_map in
+    new_edges @ edge_tuple_list new_edge_map
+
+let get_edge_list ?directed graph =
+  if Util.resolve directed then
+    (edge_tuple_list graph.edges) @ (edge_tuple_list graph.edges_from)
+  else
+    edge_tuple_list graph.edges
 
 let add_or_init v y = 
   match v with
   | None -> Some (Set.singleton (module Vertex) y)
   | Some z -> Some (Set.add z y)
 
-(** [edge_map ?directed edge_tuple_list]: given a list of edges [edge_tuple_list], 
-    return a corresponding mapping, if [directed] then the mapping is asymmetrical *)
-let edge_map ?directed edge_tuple_list =
+(** [edge_map ~reverse edge_tuple_list]: given a list of edges [edge_tuple_list], 
+    return a corresponding mapping, if [reverse] then the mapping is from targets to sources *)
+let edge_map ~reverse edge_tuple_list =
   let rec edge_list_to_map edges map = 
     match edges with
     | [] -> map
     | (x, y) :: t -> 
-      let map1 = Map.change map x ~f:(fun v -> add_or_init v y) in
-      let map2 = match directed with
-        | None -> Map.change map1 y ~f:(fun v -> add_or_init v x)
-        | Some bool -> if bool then map1 else
-          Map.change map1 y ~f:(fun v -> add_or_init v x)
+      let new_map =
+        if reverse then
+          Map.change map y ~f:(fun v -> add_or_init v x)
+        else
+          Map.change map x ~f:(fun v -> add_or_init v y) 
       in
-      edge_list_to_map t map2
+      edge_list_to_map t new_map
   in
   edge_list_to_map edge_tuple_list (Map.empty (module Vertex))
+
+let edge_maps ?directed edge_list =
+  let edges = 
+    if Util.resolve directed then
+      edge_map ~reverse:false edge_list
+    else
+      Map.merge_skewed (edge_map ~reverse:false edge_list) (edge_map ~reverse:true edge_list)
+        ~combine:(fun ~key:_ v1 v2 -> Set.union v1 v2)
+  in
+  let edges_from = 
+    if Util.resolve directed then edge_map ~reverse:true edge_list else edges
+  in
+  edges, edges_from
 
 let to_graph ?directed vertex_list edge_list = 
   let vertices, max_id = List.fold vertex_list
@@ -240,8 +320,8 @@ let to_graph ?directed vertex_list edge_list =
     ~f:(fun (acum, max) v ->
       (Set.add acum v), (Int.max max v.id))
   in
-  let edges = edge_map ?directed edge_list in
-  {nodes=vertices; edges=edges}, {total_vertices=max_id; id_map=Hashtbl.create (module Int)}
+  let edges, edges_from = edge_maps ?directed:directed edge_list in
+  {nodes=vertices; edges=edges; edges_from=edges_from}, {total_vertices=max_id; id_map=Hashtbl.create (module Int)}
 
 let vset_to_iset vset =
   Set.map (module Int) vset ~f:(fun v -> v.id)

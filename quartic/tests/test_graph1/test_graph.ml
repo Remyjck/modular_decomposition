@@ -26,20 +26,16 @@ let%test _ = Graph.disjoint vset1 vset1 |> not
 let%test _ = Graph.VSet.equal (Graph.(<~>) graph vset1).nodes vset2
 let%test _ = Graph.VSet.equal (Graph.connected graph vset1) vset2
 
-let%test _ = 
-    let dummy_state : Graph.state = {
-      total_vertices = 8;
-      id_map = Hashtbl.create (module Int)
-    } 
-    in
-    let neighbours = Graph.connected graph vset1 in
-    let () = assert(Graph.VSet.equal neighbours vset2) in
-    let graph = Graph.replace graph vset1 vertex dummy_state in
-    Graph.disjoint vset1 graph.nodes
-    &&
-    not (Hashtbl.is_empty dummy_state.id_map)
-    &&
-    Graph.VSet.equal (Map.find_exn graph.edges vertex) neighbours
+let dummy_state : Graph.state = {
+  total_vertices = 8;
+  id_map = Hashtbl.create (module Int)
+} 
+let neighbours = Graph.neighbours graph vset1
+let () = assert(Graph.VSet.equal neighbours vset2)
+let dummy_graph = Graph.replace graph vset1 vertex dummy_state
+let%test _ = Graph.disjoint vset1 dummy_graph.nodes
+let%test _ = not (Hashtbl.is_empty dummy_state.id_map)
+let%test _ = Graph.VSet.equal (Graph.neighbour dummy_graph vertex) neighbours
 
 let%test _ =
     let graph = Graph.add_vertex vertex graph in
@@ -83,7 +79,7 @@ let%test _ =
 let condensed_graph = Condense.condense_cliques graph state
 let%test _ = Set.length condensed_graph.nodes = 5
 let%test _ = Map.length condensed_graph.edges = 5
-let%test _ = List.length (Graph.edge_tuple_list condensed_graph.edges) = 6
+let%test _ = List.length (Graph.get_edge_list condensed_graph) = 6
 
 let min_cond = Condense.condensible_subgraphs condensed_graph
 let%test _ = Set.length min_cond = 1

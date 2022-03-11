@@ -144,5 +144,5 @@ let tree_to_graph ?directed tree =
       vertices, new_edges @ edges
   in
   let vertices, edges = tree_to_graph_r tree in
-  let edge_map = Graph.edge_map ?directed edges in
-  {Graph.nodes = vertices; edges = edge_map}
+  let edges, edges_from = Graph.edge_maps ?directed edges in
+  {Graph.nodes = vertices; edges = edges; edges_from = edges_from}

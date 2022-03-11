@@ -33,25 +33,21 @@ let equal_int_tuple (t11, t12) (t21, t22) =
   ||
   (t11 = t22 && t12 = t21)
 
-let to_edge_map ?directed nodes js_obj = 
+let to_edge_maps ?directed nodes js_obj = 
   let id_list = to_id_list js_obj in
   let vertex_assoc = to_assoc_list id_list nodes in
-  let res = edge_map ?directed:directed vertex_assoc in
-  let () = assert(List.for_all (Graph.edge_tuple_list res)
-    ~f:(fun (v1, v2) -> List.mem id_list (v1.id, v2.id) ~equal:equal_int_tuple))
-  in
-  res
+  Graph.edge_maps ?directed:directed vertex_assoc
 
 let parse ?directed js_obj =
   let nodes = js_obj |> member "nodes" |> to_nodes in
-  let edges = js_obj |> member "edges" |> to_edge_map ?directed:directed nodes in
+  let edges, edges_from = js_obj |> member "edges" |> to_edge_maps ?directed:directed nodes in
   let max_id = 
     let ids = List.map (Set.elements nodes) ~f:(fun v -> v.id) in
     match List.max_elt ids ~compare:Int.compare with
     | None -> 0
     | Some n -> n 
   in
-  ({nodes=nodes; edges=edges},
+  ({nodes=nodes; edges=edges; edges_from=edges_from},
    {total_vertices = max_id; id_map = Hashtbl.create (module Int)})
 
 let from_vertex vertex =
@@ -81,18 +77,25 @@ let from_id_tuple (id1, id2) =
     ("target", target)
   ]
 
-let from_edges ?directed edge_map =
-  let edge_list = edge_tuple_list ?directed:directed edge_map in
+let from_edges edge_map =
+  let edge_list = edge_tuple_list edge_map in
   let id_list = 
     List.map edge_list
       ~f:(fun (v1, v2) -> (v1.id, v2.id))
   in
   let json_list = List.map id_list ~f:from_id_tuple in
-  `List json_list
+  json_list
 
 let serialize_graph ?directed graph =
   let nodes = from_nodes graph.nodes in
-  let edges = from_edges ?directed:directed graph.edges in
+  let edges = match directed with
+    | None -> `List (from_edges graph.edges)
+    | Some bool ->
+      if bool then
+        `List ((from_edges graph.edges) @ from_edges graph.edges_from)
+      else
+        `List (from_edges graph.edges)
+  in
   `Assoc [
     ("nodes", nodes);
     ("edges", edges)

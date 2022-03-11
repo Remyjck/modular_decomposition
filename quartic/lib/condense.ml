@@ -99,6 +99,13 @@ let subset_add v subset =
   | IndSet vset -> IndSet (Set.add vset v)
   | Before vlist -> Before (v :: vlist)
 
+let share_module graph vi vj =
+  let si = find_or_empty graph.edges vi |> Util.flip Set.remove vj in
+  let sj = find_or_empty graph.edges vj |> Util.flip Set.remove vi in
+  let pi = find_or_empty graph.edges_from vi |> Util.flip Set.remove vj in
+  let pj = find_or_empty graph.edges_from vj |> Util.flip Set.remove vi in
+  VSet.equal si sj && VSet.equal pi pj
+
 (* Algorithm 3.5 *)
 (** [cc_and_is graph]: returns the set of maximal condensible cliques and 
     independent set of [graph] *)
@@ -107,31 +114,23 @@ let cc_and_is g =
   let res = ref (Set.empty (module Subset)) in
   let v = Set.elements g.nodes in
   List.iteri v ~f:(fun i vi ->
-    let vi_neighbours = 
-      match Map.find g.edges vi with
-      | None -> Set.empty (module Vertex)
-      | Some vset -> vset
-    in
+    let vi_successors = find_or_empty g.edges vi in
+    let vi_predecessors = find_or_empty g.edges_from vi in
     List.iteri v ~f:(fun j vj ->
       if j <= i then () else
       if Set.mem !visited vj then () else
-      let vj_neighbours =
-        match Map.find g.edges vj with
-        | None -> Set.empty (module Vertex)
-        | Some vset -> vset
-      in
-      if VSet.equal (Set.remove vi_neighbours vj) (Set.remove vj_neighbours vi) then
+      if share_module g vi vj then
         let () = visited := Set.add !visited vj in
         if not (Set.mem !visited vi) then
           let () = visited := Set.add !visited vi in
           let subset = 
-            if Set.mem vi_neighbours vj then
-              if Set.mem vj_neighbours vi then
+            if Set.mem vi_successors vj then
+              if Set.mem vi_predecessors vj then
                 Clique (Set.of_list (module Vertex) [vi; vj])
               else
                 Before [vi; vj]
             else
-              if Set.mem vj_neighbours vi then
+              if Set.mem vi_predecessors vj then
                 Before [vj; vi]
               else
                 IndSet (Set.of_list (module Vertex) [vi; vj])
