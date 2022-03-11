@@ -143,7 +143,7 @@ let decompose () =
   let directed = Js.Unsafe.js_expr "directed" |> Js.to_bool in
   let (graph, state) = Graph.to_graph ~directed:directed vertices edge_list in
   let condensed_graph = Condense.process graph state in
-  let tree = Tree.tree_from_condensed condensed_graph state in
+  let tree = Tree.tree_from_condensed ~directed:directed condensed_graph state in
 
   let cy2 = Js.Unsafe.js_expr "cy2" in
   let removed = cy2##elements##remove in

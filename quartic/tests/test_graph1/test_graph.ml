@@ -89,7 +89,7 @@ let prime_list =
     ~init:[]
     ~f:(fun accum vset -> 
       let subgraph = Graph.induced_subgraph condensed_graph vset in
-      let node = Graph.Prime (Graph.vmap_to_imap subgraph.edges) in
+      let node = Graph.Prime (Graph.vmap_to_imap subgraph.edges subgraph.nodes) in
       (node, vset) :: accum)
 let%test _ = List.length prime_list = 1
 let%test _ = Set.length (snd (List.nth_exn prime_list 0)) = 5

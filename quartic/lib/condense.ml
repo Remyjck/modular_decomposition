@@ -288,7 +288,7 @@ let rec process graph state =
   if Set.length condensed_graph.nodes <= 1 then return condensed_graph state else
   let min_cond = condensible_subgraphs condensed_graph in
   if Set.is_empty min_cond then
-    let node = Prime (vmap_to_imap condensed_graph.edges) in
+    let node = Prime (vmap_to_imap condensed_graph.edges condensed_graph.nodes) in
     let res = condense_prime node condensed_graph.nodes condensed_graph state in
     return res state
   else
@@ -297,7 +297,7 @@ let rec process graph state =
         ~init:[]
         ~f:(fun accum vset -> 
           let subgraph = induced_subgraph condensed_graph vset in
-          let node = Prime (vmap_to_imap subgraph.edges) in
+          let node = Prime (vmap_to_imap subgraph.edges subgraph.nodes) in
           (node, vset) :: accum)
     in
     let prime_condensed_graph =

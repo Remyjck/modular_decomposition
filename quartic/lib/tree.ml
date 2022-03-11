@@ -28,7 +28,7 @@ let successors tree =
 let remove_id id map =
   Map.remove map id |> Map.map ~f:(fun v -> Set.remove v id)
 
-let from_map map =
+let from_map ?directed map =
   let nodes = Map.keys map in
   let edges =
     let rec id_tuples_from_map (map : Graph.IMap.t) =
@@ -36,7 +36,9 @@ let from_map map =
         []
       else
         let id, id_neighbours = Map.min_elt_exn map in
-        let new_imap = remove_id id map in
+        let new_imap = 
+          if Util.resolve directed then Map.remove map id else remove_id id map
+        in
         let new_edges = Set.fold id_neighbours
           ~init:[]
           ~f:(fun accum id2 -> (id, id2) :: accum)
@@ -46,10 +48,8 @@ let from_map map =
     id_tuples_from_map map
   in
   {nodes = nodes; edges = edges}
-          
 
-
-let tree_from_condensed (graph : Graph.graph) state =
+let tree_from_condensed ?directed (graph : Graph.graph) state =
   let () = assert(Set.length graph.nodes <= 1) in
   match Set.choose graph.nodes with
     | None -> None 
@@ -72,7 +72,7 @@ let tree_from_condensed (graph : Graph.graph) state =
           {connective = Before tree_list; id = vertex.id}
 
         | Graph.Prime map ->
-          let id_graph = from_map map in
+          let id_graph = from_map ?directed:directed map in
           let tree_list = trees_from_id_list id_graph.nodes state in
           {connective = Prime (id_graph, tree_list); id = vertex.id}
 
@@ -133,12 +133,15 @@ let tree_to_graph ?directed tree =
       let vertices, edges, id_map = List.fold tl ~init:(Set.empty (module Graph.Vertex), [], Map.empty (module Int))
         ~f:(fun (vset, el, map) t ->
           let nodes, edges = tree_to_graph_r t in
-          let nmap = Map.add_exn map ~key:t.id ~data: nodes in
+          let nmap = Map.add_exn map ~key:t.id ~data:nodes in
           (Set.union vset nodes, edges @ el, nmap))
       in
       let new_edges = List.fold id_graph.edges ~init:([])
         ~f:(fun el (id1, id2) ->
-          let new_edges = join_sets (Map.find_exn id_map id1) (Map.find_exn id_map id2) in
+          let new_edges = join_sets
+            (Graph.find_or_empty id_map id1)
+            (Graph.find_or_empty id_map id2)
+          in
           new_edges @ el)
       in
       vertices, new_edges @ edges

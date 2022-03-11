@@ -329,12 +329,18 @@ let vset_to_iset vset =
 let iset_to_vset map iset =
   Set.map (module Vertex) iset ~f:(fun i -> Map.find_exn map i)
 
-let vmap_to_imap map =
+let vmap_to_imap map nodes =
+  let empty_map = Set.fold nodes ~init:(Map.empty (module Int))
+    ~f:(fun accum vertex ->
+      Map.add_exn accum ~key:vertex.id ~data:(Set.empty (module Int)))
+  in 
   Map.fold map
-    ~init:(Map.empty (module Int))
+    ~init:empty_map
     ~f:(fun ~key:k ~data:v accum ->
       let data = vset_to_iset v in
-      Map.add_exn accum ~key:k.id ~data:data)
+      Map.update accum k.id ~f:(function
+        | None -> data
+        | Some iset -> Set.union iset data))
 
 (** [id_map vset]: returns a map from the [id]s of the elements of [vset] to 
     the elements themselves *)
