@@ -128,10 +128,10 @@ let cc_and_is g =
               if Set.mem vi_predecessors vj then
                 Clique (Set.of_list (module Vertex) [vi; vj])
               else
-                Before [vi; vj]
+                Before [vj; vi]
             else
               if Set.mem vi_predecessors vj then
-                Before [vj; vi]
+                Before [vi; vj]
               else
                 IndSet (Set.of_list (module Vertex) [vi; vj])
           in

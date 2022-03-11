@@ -428,6 +428,15 @@ let cy2 = cytoscape({
             'background-color': 'deepskyblue',
             'line-color': '#2B65EC',
         }
+    },
+    {
+        selector: '.before',
+        style: {
+            'line-color': 'green',
+            'curve-style': 'straight',
+            'target-arrow-shape': 'triangle',
+            'target-arrow-color': 'green',
+        }
     }]    
 });
 cy2.changes = [];

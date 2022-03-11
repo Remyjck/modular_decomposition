@@ -68,6 +68,36 @@ let draw_prime_graph cy parent (id_graph : Tree.id_graph) =
   in
   ()
 
+let draw_before cy id tl =
+  let il = List.map tl ~f:(fun t -> Int.to_string t.Tree.id |> Js.string) in
+  let rec draw_inner il =
+    match il with
+    | [] -> ()
+    | [_] -> ()
+    | h1 :: h2 :: t ->
+      let edge = object%js
+        val data = object%js
+          val source =  h2
+          val target =  h1
+        end
+      end
+      in
+      let added_edge = cy##add (Js.Unsafe.coerce edge) in
+      let () = (Js.Unsafe.coerce added_edge)##addClass (Js.string "before") in
+      let () = if List.is_empty t then (cy##getElementById h2)##addClass (Js.string "before-root") in 
+      draw_inner (h2 :: t)
+  in
+  let () = draw_inner il in
+  List.iter il ~f:(fun target_id ->
+    let edge = object%js 
+      val data = object%js
+        val source = id
+        val target = target_id
+      end
+    end
+    in
+    let _ = cy##add (Js.Unsafe.coerce edge) in ())
+
 let rec draw_tree cy (tree : Tree.tree) =
   let id = Int.to_string tree.id |> Js.string in
   let group = Js.string "nodes" in
@@ -103,6 +133,7 @@ let rec draw_tree cy (tree : Tree.tree) =
     | Some ids ->
       match tree.connective with
       | Prime (id_graph,_) -> draw_prime_graph (Js.Unsafe.coerce cy) id id_graph 
+      | Before tl -> draw_before (Js.Unsafe.coerce cy) id tl
       | _ ->
         List.iter ids ~f:(fun target_id ->
           let edge = object%js 
@@ -161,7 +192,7 @@ let decompose () =
 
 let rec read_prime root id =
   let children = root##children |> Js.to_array |> Array.to_list in
-  let () = assert (List.length children > 3) in
+  let () = assert (List.length children >= 3) in
   let nodes = List.map children ~f:(fun c -> 
     let node_id_s = c##id |> Js.to_string in
     Util.remove_rep node_id_s)
@@ -182,6 +213,18 @@ let rec read_prime root id =
   let connective = Tree.Prime (id_graph, successors) in
   {Tree.connective = connective; id = id}
 
+and read_before root id =
+  let child_root = root##outgoers##nodes (Js.string ".before-root") in
+  let children =
+    let rec parse_children root acc =
+      let next = (root##connectedEdges (Js.string ".before"))##targets##not (root) in
+      if next##empty then acc else parse_children next (next :: acc)
+    in
+    parse_children child_root [child_root]
+  in
+  let successors = List.map children ~f:(read_tree) in
+  {Tree.connective = Tree.Before successors; id = id}
+
 and read_atom node id label =
   let pol = node##data (Js.string "polarisation") |> Js.to_bool in
   let connective = Tree.Atom {Graph.label = label; pol = pol} in
@@ -191,20 +234,21 @@ and read_tree root =
   let label_string = root##data (Js.string "label") |> Js.to_string in
   let id = root##data (Js.string "id") |> Js.parseInt in
   if String.equal label_string "" then read_prime root id else
-  let successors = root##outgoers (Js.string "node") |> Js.to_array |> Array.to_list in
+  if String.equal label_string "◃" then read_before (Js.Unsafe.coerce root) id else
+  let all_edges = (Js.Unsafe.coerce root)##connectedEdges in
+  let edges_to = all_edges##not (all_edges##edges (Js.string ".before")) in
+  let successors = edges_to##targets##not root |> Js.to_array |> Array.to_list in
+  let () = Firebug.console##log successors in
   if List.is_empty successors then read_atom (Js.Unsafe.coerce root) id label_string else
   let tl = List.map successors ~f:read_tree in
   let connective =
     if String.equal label_string "⊗" then 
       Tree.Tensor tl
     else 
-      if String.equal label_string "◃" then
-        Tree.Before tl
+      if String.equal label_string "⅋" then
+        Tree.Par tl
       else
-        if String.equal label_string "⅋" then
-          Tree.Par tl
-        else
-          raise_s (Sexp.message "error" [])
+        raise_s (Sexp.message "error" [])
   in
   {Tree.connective = connective; id = id}
 
