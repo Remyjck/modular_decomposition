@@ -79,7 +79,7 @@ let%test _ =
 let condensed_graph = Condense.condense_cliques graph state
 let%test _ = Set.length condensed_graph.nodes = 5
 let%test _ = Map.length condensed_graph.edges = 5
-let%test _ = List.length (Graph.get_edge_list condensed_graph) = 6
+let%test _ = List.length (Graph.edge_tuple_list condensed_graph.edges) = 6
 
 let min_cond = Condense.condensible_subgraphs condensed_graph
 let%test _ = Set.length min_cond = 1

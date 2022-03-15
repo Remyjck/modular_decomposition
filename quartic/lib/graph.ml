@@ -273,12 +273,6 @@ let rec edge_tuple_list edge_map =
     let new_edge_map = remove_vertex_edges vi edge_map in
     new_edges @ edge_tuple_list new_edge_map
 
-let get_edge_list ?directed graph =
-  if Util.resolve directed then
-    (edge_tuple_list graph.edges) @ (edge_tuple_list graph.edges_from)
-  else
-    edge_tuple_list graph.edges
-
 let add_or_init v y = 
   match v with
   | None -> Some (Set.singleton (module Vertex) y)
