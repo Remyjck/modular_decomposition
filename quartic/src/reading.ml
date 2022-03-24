@@ -4,7 +4,6 @@ open Js_of_ocaml
 
 let rec read_prime root id =
   let children = root##children |> Js.to_array |> Array.to_list in
-  let () = assert (List.length children >= 3) in
   let nodes = List.map children ~f:(fun c -> 
     let node_id_s = c##id |> Js.to_string in
     Util.remove_rep node_id_s)
