@@ -470,11 +470,12 @@ function weightedBarycenter(parent, x, y) {
 }
 
 function keyPressCy2(string) {
-    if (isAlphaNumeric(string) || string == "&" || string == "*" || string == "^") {
+    if (isAlphaNumeric(string) || string == "&" || string == "*" || string == "^" || string == ">") {
         let label, class_;
         if (string == "&") {label = "⅋"; class_ = "par";} else
         if (string == "*") {label = "⊗"; class_ = "tensor"} else
         if (string == "^") {label = "prime"; class_ = "prime"} else
+        if (string == ">") {label = "before"; class_ = "before"} else
         {label = string; class_ = "atom"};
         const new_id = freshID2();
         const node = {
@@ -494,12 +495,12 @@ function keyPressCy2(string) {
         cy2.changes.push(["add", added]);
         
         const selected = cy2.nodes(':selected');
-        if (selected.length == 1 && (selected[0].isParent() || selected[0].data('label') == "prime")) {
+        if (selected.length == 1 && (selected[0].hasClass("prime") || selected[0].hasClass("before"))) {
             selected.data('label', "");
             const id_rep = new_id + "-rep";
             const barycenter = weightedBarycenter(selected[0], mousePosition2.x, mousePosition2.y);
-            const x = barycenter.x + 0.2 * mousePosition2.x;
-            const y = barycenter.y + 0.2 * mousePosition2.y;
+            const x = barycenter.x + 0.4 * mousePosition2.x;
+            const y = barycenter.y + 0.4 * mousePosition2.y;
             const rep_node = {
                 group: 'nodes',
                 data: {
@@ -539,18 +540,30 @@ function freshID2() {
     return max_id2.toString();
 }
 
+function getBeforeRoot(node) {
+    const pred = node.predecessors().nodes()[0];
+    if (pred) {return getBeforeRoot(pred)} 
+    else {return node};
+};
+
+function getRoot(node) {
+    console.log(node);
+    if (node.data("parent")) {return getRoot(cy2.$id(node.data("parent")))};
+    const pred = node.predecessors().nodes()[0];
+    if (pred) {return getRoot(pred)}
+    else {return node};
+};
+
 cy2.on('click', "node", function(evt){
     const target = evt.target;
-
-    if (target.hasClass('root')) {return};
 
     let selected = cy2.nodes(':selected');
     // If there isn't exactly once selected node, do nothing
     if (selected.length != 1 || target.selected() || event.shiftKey) {return};
 
     const source = selected[0];
-    // If source is an atom or a prime graph, do nothing
-    if (isAlphaNumeric(source.data('label')) || source.isParent()) {return};
+    // If source is an atom do nothing
+    if (isAlphaNumeric(source.data('label'))) {return};
 
     let classes = [];
 
@@ -559,6 +572,14 @@ cy2.on('click', "node", function(evt){
             // if they share the same parent, make the edge an inner edge, otherwise do nothing
             if (target.data('parent') == source.data('parent')) { classes.push('compoundIn') }
             else { return };
+
+            if (source.parent().hasClass("before")) {
+                if (target.successors()['+'](target).intersection(source.successors()['+'](source)).nonempty()) {return};
+                classes.push("before"); 
+                const root = getRoot(source);
+                source.parent().children().removeClass("before-root");
+                root.addClass("before-root");
+            };
         } 
         // If the target is not a child, make the edge an outward edge and make the source a representative of the target
         else {
@@ -576,10 +597,46 @@ cy2.on('click', "node", function(evt){
         // If the target is a child and the source is not a child, do nothing
         if (target.isChild()) {return};
 
+        if (source.hasClass("prime")) {
+            console.log("here");
+            const id_rep = target.id() + "-rep";
+            const barycenter = weightedBarycenter(source, target.renderedPosition().x, target.renderedPosition().y);
+            const rep_node = {
+                group: 'nodes',
+                data: {
+                    id: id_rep,
+                    label: "",
+                    parent: source.id(),
+                },
+                renderedPosition: {
+                    x: barycenter.x + 0.4 * target.renderedPosition().x,
+                    y: barycenter.y + 0.4 * target.renderedPosition().y,
+                },
+            };
+            const added_rep = cy2.add(rep_node);
+            console.log(added_rep);
+            added_rep.addClass('inCompound');
+
+            const rep_edge = {
+                data: {
+                    source: id_rep,
+                    target: target.id(),
+                },
+            };
+            const added_rep_edge = cy2.add(rep_edge);
+            added_rep_edge.addClass('compoundOut');
+        };
         // If the target already has an incoming edge, do nothing
         if (target.incomers().nonempty()) {return};
 
         if (target.successors()['+'](target).intersection(source.successors()['+'](source)).nonempty()) {return};
+    };
+
+    if (!source.isChild() && !target.isChild()) {
+        const root = getRoot(source);
+        cy2.elements().removeClass("root");
+        root.addClass("root");
+        console.log(root);
     };
 
     cy2.batch(function() {
