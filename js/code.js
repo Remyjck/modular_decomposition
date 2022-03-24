@@ -621,5 +621,36 @@ function getGraph() {
         if (checkPrime()) {
             recompose();
         }
+        else if (showNonPrime) {
+            const a = document.createElement("a");
+            a.href = "#dontsee";
+            a.id = "dontsee";
+            a.setAttribute("role", "button");
+            a.classList.add("secondary");
+            a.onclick = function(){showNonPrime = false; closeModal()};
+            a.innerText = "Don't show this again";
+
+            openModal(
+                "Could not get graph",
+                `A non-prime graph was found amongst the prime graphs of the drawn decomposition tree.
+                Please ensure that all prime nodes contain prime graphs and try again.`,
+                a
+            )
+        }
+    }
+    else if (showNonConnected) {
+        const a = document.createElement("a");
+        a.href = "#dontsee";
+        a.id = "dontsee";
+        a.setAttribute("role", "button");
+        a.classList.add("secondary");
+        a.onclick = function(){showNonConnected = false; closeModal()};
+        a.innerText = "Don't show this again";
+        openModal(
+            "Could not get graph",
+            `The drawn decomposition tree is not connected.
+            Please ensure that all nodes are connected to the root (select a root by double clicking a node).`,
+            a
+        )
     }
 };

@@ -14,6 +14,19 @@
 </head>
 
 <body>
+    <!-- Modal -->
+    <dialog id="modal">
+    <article>
+        <a href="#close" aria-label="Close" class="close" onClick="toggleModal()"></a>
+        <h3 id="modal-title"></h3>
+        <p id="modal-text"></p>
+        <footer id="modal-footer">
+            <a href="#ok" role="button" onClick="toggleModal()">Ok</a>
+        </footer>
+    </article>
+    </dialog>
+    <script src="js/dependencies/modal.js"></script>
+
     <section class="container">
         <hgroup style="text-align: center; margin-top: 20px;">
             <h1>Modular Decomposition of Graphs</h1>
