@@ -631,7 +631,7 @@ function checkConnected() {
 }
 
 function checkPrime() {
-    const parents = cy2.nodes('$node > node');
+    const parents = cy2.nodes('.prime');
     return parents.reduce(
         (acc, parent) => {
             if (acc) {

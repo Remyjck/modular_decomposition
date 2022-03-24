@@ -19,7 +19,7 @@ let draw_prime_graph cy parent (id_graph : Tree.id_graph) =
     let edge = object%js
       val data = object%js
         val source = rep_id
-        val target = id
+        val target = Int.to_string id |> Js.string
       end
     end
     in
@@ -40,8 +40,34 @@ let draw_prime_graph cy parent (id_graph : Tree.id_graph) =
   in
   ()
 
-let draw_before cy id tl =
-  let il = List.map tl ~f:(fun t -> Int.to_string t.Tree.id |> Js.string) in
+let draw_before cy parent tl =
+  let rep_id_list = List.map tl ~f:(fun t ->
+    let id = Int.to_string t.Tree.id in
+    let rep_id = String.concat [id; "-rep"] |> Js.string in
+    let node = object%js 
+      val group = Js.string "nodes"
+      val data = object%js
+        val label = Js.string ""
+        val polarisation = true
+        val id = rep_id
+        val parent = parent
+      end
+    end
+    in
+    let added_node = cy##add (Js.Unsafe.coerce node) in
+    let edge = object%js
+      val data = object%js
+        val source = rep_id
+        val target = Js.string id
+      end
+    end
+    in
+    let added_edge = cy##add (Js.Unsafe.coerce edge) in
+    let () = (Js.Unsafe.coerce added_edge)##addClass (Js.string "compoundOut") in
+    let () = (Js.Unsafe.coerce added_node)##addClass (Js.string "inCompound") in
+    rep_id)
+  in
+
   let rec draw_inner il =
     match il with
     | [] -> ()
@@ -59,35 +85,26 @@ let draw_before cy id tl =
       let () = if List.is_empty t then (cy##getElementById h2)##addClass (Js.string "before-root") in 
       draw_inner (h2 :: t)
   in
-  let () = draw_inner il in
-  List.iter il ~f:(fun target_id ->
-    let edge = object%js 
-      val data = object%js
-        val source = id
-        val target = target_id
-      end
-    end
-    in
-    let _ = cy##add (Js.Unsafe.coerce edge) in ())
+  draw_inner rep_id_list
 
 let rec draw_tree cy (tree : Tree.tree) =
   let id = Int.to_string tree.id |> Js.string in
   let group = Js.string "nodes" in
-  let label, polarisation, id_list =
+  let label, polarisation, id_list, class_ =
     match tree.connective with
-    | Atom atom -> Js.string atom.label, Js.bool atom.pol, None
+    | Atom atom -> Js.string atom.label, Js.bool atom.pol, None, "atom"
     | Tensor tl ->
       let id_list = List.map tl ~f:(draw_tree cy) in
-      Js.string "⊗", Js.bool true, Some id_list
+      Js.string "⊗", Js.bool true, Some id_list, "tensor"
     | Par tl ->
       let id_list = List.map tl ~f:(draw_tree cy) in
-      Js.string "⅋", Js.bool true, Some id_list
+      Js.string "⅋", Js.bool true, Some id_list, "par"
     | Before tl ->
       let id_list = List.map tl ~f:(draw_tree cy) in
-      Js.string "◃", Js.bool true, Some id_list
+      Js.string "", Js.bool true, Some id_list, "before"
     | Prime (_, tl) ->
       let id_list = List.map tl ~f:(draw_tree cy) in
-      Js.string "", Js.bool true, Some id_list
+      Js.string "", Js.bool true, Some id_list, "prime"
   in
   let node = object%js
     val group = group
@@ -98,7 +115,8 @@ let rec draw_tree cy (tree : Tree.tree) =
     end
   end
   in
-  let () = cy##add (Js.Unsafe.coerce node) in
+  let added = cy##add (Js.Unsafe.coerce node) in
+  let () = (Js.Unsafe.coerce added)##addClass (Js.string class_) in
   let () = 
     match id_list with
     | None -> ()
@@ -115,7 +133,7 @@ let rec draw_tree cy (tree : Tree.tree) =
             end
           end
           in
-          cy##add (Js.Unsafe.coerce edge))
+          let _ = cy##add (Js.Unsafe.coerce edge) in ())
   in    
   (Int.to_string tree.id) |> Js.string
 
