@@ -251,7 +251,7 @@ and read_tree root =
   in
   {Tree.connective = connective; id = id}
 
-let draw_graph cy (graph : Graph.graph) =
+let draw_graph ?directed cy (graph : Graph.graph) =
   Set.iter graph.nodes ~f:(fun v ->
     match v.connective with
     | Atom atom -> 
@@ -266,7 +266,7 @@ let draw_graph cy (graph : Graph.graph) =
       in
       cy##add node 
     | _ -> ());
-  let edge_list = Graph.edge_tuple_list graph.edges in
+  let edge_list = Graph.edge_tuple_list ?directed:directed graph.edges in
   List.iter edge_list ~f:(fun (src, trgt) ->
     let edge = object%js
       val group = Js.string "edges"
@@ -290,7 +290,7 @@ let recompose () =
   let cy1 = Js.Unsafe.js_expr "cy1" in
   let removed = cy1##elements##remove in
   let () = cy1##.changes##push ([|Js.Unsafe.inject (Js.string "remove"); removed|] |> Js.array) in
-  let () = draw_graph cy1 graph in
+  let () = draw_graph ~directed:directed cy1 graph in
   let () = cy1##.changes##push ([|Js.Unsafe.inject (Js.string "replace"); cy1##elements|] |> Js.array) in
   Js.Unsafe.global##cleanLayout(cy1)
 

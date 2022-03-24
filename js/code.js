@@ -170,7 +170,6 @@ function addEdges(cy, target, selected) {
                 if (source.edgesTo(target).length > 0) {continue}
         }
         else if (source.edgesWith(target).length > 0) {continue};
-        console.log("added edge");
         to_add.push({
             group: 'edges',
             data: {
@@ -290,7 +289,7 @@ function onReaderLoad(event) {
     const edges_obj = edges.map(edge => {
         return {group: 'edges', data: edge}
     });
-    clearGraph();
+    clearGraph(cy1);
     const added_nodes = cy1.add(nodes_obj);
     const added_edges = cy1.add(edges_obj);
     const eles = added_nodes.union(added_edges);

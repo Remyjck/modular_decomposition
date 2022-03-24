@@ -30,18 +30,18 @@ type vertex = {
   }
   [@@deriving compare, sexp, hash]
 
+let getLabel vertex = 
+  match vertex.connective with
+  | Atom atom -> atom.label
+  | Tensor _ -> "⊗"
+  | Par _ -> "⅋"
+  | Before _ -> "◃"
+  | Prime _ -> "prime"
+
 module Vertex = struct
   module T = struct
     type t = vertex [@@deriving compare, sexp, hash]
-    let show t =
-      let () = match t.connective with
-        | Atom atom -> Stdio.printf "%s" atom.label
-        | Tensor _ -> Stdio.printf "Tensor"
-        | Par _ -> Stdio.printf "Par"
-        | Before _ -> Stdio.printf "Before"
-        | Prime _ -> Stdio.printf "Prime"
-      in
-      Stdio.printf " %d" t.id
+    let show t = Stdio.printf "%s %d" (getLabel t) t.id
   end
   include T
   include Comparable.Make(T)
@@ -75,10 +75,10 @@ type graph = {
   }
 
 let show graph =
-  let () = Stdio.printf "Nodes: "; Set.iter graph.nodes ~f:(fun v -> Stdio.printf "%d " v.id); Stdio.printf "\n"; in
+  let () = Stdio.printf "Nodes: "; Set.iter graph.nodes ~f:(fun v -> Stdio.printf "%s " (getLabel v)); Stdio.printf "\n"; in
   Stdio.printf "Edges: \n"; Map.iteri graph.edges ~f:(fun ~key:k ~data:d -> 
-    Stdio.printf "\t%d: " k.id;
-    Set.iter d ~f:(fun v -> Stdio.printf "%d, " v.id);
+    Stdio.printf "\t%s: " (getLabel k);
+    Set.iter d ~f:(fun v -> Stdio.printf "%s, " (getLabel v));
     Stdio.printf "\n")
 
 type state = {
@@ -182,7 +182,7 @@ let neighbours graph vertices =
 let replace graph h vertex state =
   let () = assert(Set.is_subset h ~of_:graph.nodes) in
   let () = add_vertices_to_hash h state in
-  (* let () = Stdio.printf "Replacing { "; Set.iter h ~f:(fun v -> Stdio.printf "%d " v.id); Stdio.printf "} with:\n";
+  (* let () = Stdio.printf "Replacing { "; Set.iter h ~f:(fun v -> Vertex.show v; Stdio.printf ", "); Stdio.printf "} with:\n";
     Vertex.show vertex; Stdio.printf "\n"
   in *)
   let new_nodes = Set.diff graph.nodes h |> Util.flip Set.add vertex in
@@ -195,7 +195,7 @@ let replace graph h vertex state =
     | None -> new_successors
     | Some vset -> Set.union vset new_successors)
   in
-  let new_edges = Set.fold new_successors ~init:new_edges ~f:(fun accum v ->
+  let new_edges = Set.fold new_predecessors ~init:new_edges ~f:(fun accum v ->
     Map.update accum v ~f:(function
       | None -> Set.singleton (module Vertex) vertex
       | Some vset -> Set.add vset vertex))
@@ -204,7 +204,7 @@ let replace graph h vertex state =
     | None -> new_predecessors
     | Some vset -> Set.union vset new_predecessors)
   in
-  let new_edges_from = Set.fold new_predecessors ~init:new_edges_from ~f:(fun accum v ->
+  let new_edges_from = Set.fold new_successors ~init:new_edges_from ~f:(fun accum v ->
     Map.update accum v ~f:(function
       | None -> Set.singleton (module Vertex) vertex
       | Some vset -> Set.add vset vertex))
@@ -261,7 +261,7 @@ let is_module g h =
 
 (** [edge_tuple_list ?directed edges]: given a mapping [edges],
     return a corresponding list of edges  *)
-let rec edge_tuple_list edge_map =
+let rec edge_tuple_list ?directed edge_map =
   if Map.is_empty edge_map then
     []
   else
@@ -270,8 +270,12 @@ let rec edge_tuple_list edge_map =
       ~init:[]
       ~f:(fun accum vj -> (vi, vj) :: accum) 
     in
-    let new_edge_map = remove_vertex_edges vi edge_map in
-    new_edges @ edge_tuple_list new_edge_map
+    let new_edge_map = if Util.resolve directed then 
+        Map.remove edge_map vi
+      else 
+        remove_vertex_edges vi edge_map
+    in
+    new_edges @ edge_tuple_list ?directed:directed new_edge_map
 
 let add_or_init v y = 
   match v with

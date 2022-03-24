@@ -92,12 +92,17 @@ let subset_contains v subset =
   | IndSet vset -> Set.mem vset v
   | Before vlist -> List.mem vlist v ~equal:(Vertex.equal)
 
-let subset_add v subset =
+let subset_add graph v subset =
   match subset with 
   | Singleton _ -> raise_s [%message "error" "Cannot add vertex to Singleton subset"]
   | Clique vset -> Clique (Set.add vset v)
   | IndSet vset -> IndSet (Set.add vset v)
-  | Before vlist -> Before (v :: vlist)
+  | Before vlist -> 
+    let last = List.hd_exn vlist in 
+    if Set.mem (find_or_empty graph.edges last) v then
+      Before (v :: vlist)
+    else
+      Before (vlist@[v])
 
 let share_module graph vi vj =
   let si = find_or_empty graph.edges vi |> Util.flip Set.remove vj in
@@ -138,7 +143,7 @@ let cc_and_is g =
           res := Set.add !res subset;
         else
           let subset = Set.find_exn !res ~f:(subset_contains vi) in 
-          let new_subset = subset_add vj subset in
+          let new_subset = subset_add g vj subset in
           let () = res := Set.remove !res subset in
           res := Set.add !res new_subset
     )
