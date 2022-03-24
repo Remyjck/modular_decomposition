@@ -61,15 +61,36 @@ let tree_from_condensed ?directed (graph : Graph.graph) state =
 
         | Graph.Tensor iset -> 
           let tree_list = trees_from_id_list (Set.elements iset) state in
-          {connective = Tensor tree_list; id = vertex.id}
+          let tensor_lists, tree_list = List.partition_map tree_list ~f:(fun t ->
+            match t.connective with
+            | Tensor tl -> First tl
+            | _ -> Second t)
+          in
+          let successors = List.concat (tree_list :: tensor_lists) in
+          {connective = Tensor successors; id = vertex.id}
 
         | Graph.Par iset ->
           let tree_list = trees_from_id_list (Set.elements iset) state in
-          {connective = Par tree_list; id = vertex.id}
+          let par_lists, tree_list = List.partition_map tree_list ~f:(fun t ->
+            match t.connective with
+            | Par tl -> First tl
+            | _ -> Second t)
+          in
+          let successors = List.concat (tree_list :: par_lists) in
+          {connective = Par successors; id = vertex.id}
 
         | Graph.Before ilist ->
           let tree_list = trees_from_id_list ilist state in
-          {connective = Before tree_list; id = vertex.id}
+          let rec parse_before tl =
+            match tl with 
+            | [] -> []
+            | h :: t ->
+              match h.connective with
+              | Before tl -> tl @ (parse_before t)
+              | _ -> h :: (parse_before t)
+          in
+          let successors = parse_before tree_list in
+          {connective = Before successors; id = vertex.id}
 
         | Graph.Prime map ->
           let id_graph = from_map ?directed:directed map in
