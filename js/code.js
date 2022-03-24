@@ -446,8 +446,30 @@ cy2.on('mousemove', function(mouseMoveEvent){
     mousePosition2.y = mouseMoveEvent.renderedPosition.y;
 }, false);
 
+function weightedBarycenter(parent, x, y) {
+    const children = parent.children();
+    const distances = children.map(c => {
+        const cx = c.renderedPosition().x;
+        const dx = cx - x;
+        const cy = c.renderedPosition().y;
+        const dy = cy - y;
+        return Math.sqrt(dx*dx + dy*dy);
+    });
+    const max = Math.max(...distances);
+    const temp_weights = distances.map(d => {return max/d});
+    const total = temp_weights.reduce((acc, w) => acc + w, 0);
+    const weights = temp_weights.map(d => {return d/total});
+    const barycenter = children.reduce((acc, c, i) => {
+        const w = weights[i];
+        const pos = c.renderedPosition();
+        const x = pos.x*w;
+        const y = pos.y*w;
+        return {x : acc.x + x, y : acc.y + y}
+    }, {x: 0, y: 0});
+    return barycenter;
+}
+
 function keyPressCy2(string) {
-    console.log(string);
     if (isAlphaNumeric(string) || string == "&" || string == "*" || string == "^") {
         let label;
         if (string == "&") {label = "⅋"} else
@@ -474,12 +496,19 @@ function keyPressCy2(string) {
         if (selected.length == 1 && (selected[0].isParent() || selected[0].data('label') == "prime")) {
             selected.data('label', "");
             const id_rep = new_id + "-rep";
+            const barycenter = weightedBarycenter(selected[0], mousePosition2.x, mousePosition2.y);
+            const x = barycenter.x + 0.2 * mousePosition2.x;
+            const y = barycenter.y + 0.2 * mousePosition2.y;
             const rep_node = {
                 group: 'nodes',
                 data: {
                     id: id_rep,
                     label: "",
                     parent: selected[0].id(),
+                },
+                renderedPosition: {
+                    x: x,
+                    y: y,
                 },
             };
             const added_rep = cy2.add(rep_node);
@@ -516,7 +545,7 @@ cy2.on('click', "node", function(evt){
 
     let selected = cy2.nodes(':selected');
     // If there isn't exactly once selected node, do nothing
-    if (selected.length  != 1 || target.selected() || event.shiftKey) {return};
+    if (selected.length != 1 || target.selected() || event.shiftKey) {return};
 
     const source = selected[0];
     // If source is an atom or a prime graph, do nothing
