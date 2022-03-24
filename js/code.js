@@ -471,11 +471,11 @@ function weightedBarycenter(parent, x, y) {
 
 function keyPressCy2(string) {
     if (isAlphaNumeric(string) || string == "&" || string == "*" || string == "^") {
-        let label;
-        if (string == "&") {label = "⅋"} else
-        if (string == "*") {label = "⊗"} else
-        if (string == "^") {label = "prime"} else
-        {label = string};
+        let label, class_;
+        if (string == "&") {label = "⅋"; class_ = "par";} else
+        if (string == "*") {label = "⊗"; class_ = "tensor"} else
+        if (string == "^") {label = "prime"; class_ = "prime"} else
+        {label = string; class_ = "atom"};
         const new_id = freshID2();
         const node = {
             group: 'nodes',
@@ -490,6 +490,7 @@ function keyPressCy2(string) {
             },
         };
         const added = cy2.add(node);
+        added.addClass(class_);
         cy2.changes.push(["add", added]);
         
         const selected = cy2.nodes(':selected');
