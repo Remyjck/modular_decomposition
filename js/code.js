@@ -598,7 +598,6 @@ cy2.on('click', "node", function(evt){
         if (target.isChild()) {return};
 
         if (source.hasClass("prime")) {
-            console.log("here");
             const id_rep = target.id() + "-rep";
             const barycenter = weightedBarycenter(source, target.renderedPosition().x, target.renderedPosition().y);
             const rep_node = {
@@ -614,8 +613,8 @@ cy2.on('click', "node", function(evt){
                 },
             };
             const added_rep = cy2.add(rep_node);
-            console.log(added_rep);
             added_rep.addClass('inCompound');
+            source.data("label", "");
 
             const rep_edge = {
                 data: {
@@ -705,25 +704,7 @@ function checkPrime() {
 
 function getGraph() {
     if (checkConnected()) {
-        if (checkPrime()) {
-            recompose();
-        }
-        else if (showNonPrime) {
-            const a = document.createElement("a");
-            a.href = "#dontsee";
-            a.id = "dontsee";
-            a.setAttribute("role", "button");
-            a.classList.add("secondary");
-            a.onclick = function(){showNonPrime = false; closeModal()};
-            a.innerText = "Don't show this again";
-
-            openModal(
-                "Could not get graph",
-                `A non-prime graph was found amongst the prime graphs of the drawn decomposition tree.
-                Please ensure that all prime nodes contain prime graphs and try again.`,
-                a
-            )
-        }
+        recompose();
     }
     else if (showNonConnected) {
         const a = document.createElement("a");
