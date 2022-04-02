@@ -547,7 +547,6 @@ function getBeforeRoot(node) {
 };
 
 function getRoot(node) {
-    console.log(node);
     if (node.data("parent")) {return getRoot(cy2.$id(node.data("parent")))};
     const pred = node.predecessors().nodes()[0];
     if (pred) {return getRoot(pred)}
@@ -635,7 +634,6 @@ cy2.on('click', "node", function(evt){
         const root = getRoot(source);
         cy2.elements().removeClass("root");
         root.addClass("root");
-        console.log(root);
     };
 
     cy2.batch(function() {
