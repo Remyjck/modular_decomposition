@@ -38,10 +38,7 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           
       - run: opam install . --deps-only --with-test
-        working-directory: ./quartic
 
       - run: opam exec -- dune build
-        working-directory: ./quartic
 
       - run: opam exec -- dune runtest
-        working-directory: ./quartic
