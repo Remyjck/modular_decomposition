@@ -10,14 +10,8 @@
 *.cmxs
 *.cmxa
 
-*.ml
-*.ml.d
-*.cmt
-*.ml-gen
-*.mli
 _build/log
 _build/default/.dune
-*.all-deps
 *merlin*
 
 # ocamlbuild targets

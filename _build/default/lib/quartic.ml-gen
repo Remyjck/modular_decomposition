@@ -1,0 +1,18 @@
+(** @canonical Quartic.Condense *)
+module Condense = Quartic__Condense
+
+
+(** @canonical Quartic.Graph *)
+module Graph = Quartic__Graph
+
+
+(** @canonical Quartic.Parsegraph *)
+module Parsegraph = Quartic__Parsegraph
+
+
+(** @canonical Quartic.Tree *)
+module Tree = Quartic__Tree
+
+
+(** @canonical Quartic.Util *)
+module Util = Quartic__Util

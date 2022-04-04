@@ -1,0 +1,10 @@
+(** @canonical Dune__exe.Drawing *)
+module Drawing = Dune__exe__Drawing
+
+
+(** @canonical Dune__exe.Main *)
+module Main = Dune__exe__Main
+
+
+(** @canonical Dune__exe.Reading *)
+module Reading = Dune__exe__Reading
