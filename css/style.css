@@ -1,8 +1,15 @@
 .cy {
-    height: 600px;
+    height: 70vh;
+    width: 35vw;
     position: relative;
     background-color: lightgrey;
     border-radius: 15px;
+}
+
+#layout {
+    display: flex;
+    width: 100vw;
+    justify-content: space-around;
 }
 
 .row {
