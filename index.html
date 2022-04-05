@@ -32,22 +32,10 @@
             <h1>Modular Decomposition of Graphs</h1>
             <h2>A tool for the manipulation and visualisation of graphs and their structures</h2>
         </hgroup>
-        <article style="padding-bottom: 20px;">
-            <details>
-                <summary>Usage instructions</summary>
-                    <ul>
-                        <li>To add nodes: move mouse pointer to where you want to add a node and press a letter or number on the keyboard</li>
-                        <li>To add edges: click on an unselected node to connect it to all selected nodes</li>
-                        <li>To select a node or an edge: click or shift click to select several</li>
-                        <li>To delete nodes: hit backspace to delete all selected nodes and corresponding edges</li>
-                        <li>To negate nodes: right click selected or single node</li>
-                    </ul> 
-            </details>
-        </article>
     </section>
 
     <section>
-    <div class="grid left-space right-space align-items-center">
+    <div id="layout">
         <div class="col">
             <div class="grid">
                 <button type="button" onclick="clearGraph(cy1)">Clear Graph</button>
@@ -61,8 +49,20 @@
                 <input id="upload" type="file" style="display: none;"/>
                 <button type="button" onclick="undo(cy1)">Undo</button>
             </div>
+            <article style="padding-bottom: 20px; text-align: left; width: 35vw;">
+                <details>
+                    <summary>Graph Manipulation Instructions</summary>
+                        <ul>
+                            <li>To add nodes: move mouse pointer to where you want to add a node and press a letter or number on the keyboard</li>
+                            <li>To add edges: click on an unselected node to connect it to a selected nodes</li>
+                            <li>To select a node or an edge: click or shift click to select several</li>
+                            <li>To delete nodes: hit backspace to delete all selected nodes and corresponding edges</li>
+                            <li>To negate nodes: right click selected or single node</li>
+                        </ul> 
+                </details>
+            </article>
         </div>
-        <div class="col">
+        <div class="col" style="width: 15vw; margin-top: 30vh;">
             <button type="button" id="ditoggle" onclick="toggleDirected()">Make graph directed</button>
             <button type="button" id="decompose" onclick="decompose(); max_id2 = getMaxId(cy2)">Get Modular Decomposition</button>
             <button type="button" id="recompose" onclick="getGraph()" style="margin-top: 20px;">Get Graph</button>
@@ -77,12 +77,27 @@
                 <button type="button" id="download2" onclick="exportTree()">Download Tree</button>
                 <button type="button" onclick="undo(cy2)">Undo</button>
             </div>
+            <article style="padding-bottom: 20px; text-align: left; width: 35vw;">
+                <details>
+                    <summary>Tree Manipulation Instructions</summary>
+                        <ul>
+                            <li>To add nodes: move mouse pointer to where you want to add a node and press a letter or number on the keyboard</li>
+                            <li>To add edges: click on an unselected node to connect it to all selected nodes</li>
+                            <li>To select a node or an edge: click or shift click to select several</li>
+                            <li>To delete nodes: hit backspace to delete all selected nodes and corresponding edges</li>
+                            <li>To negate nodes: right click selected or single node</li>
+                            <li>To create a par, press "&". To create a tensor, press "*". To create a before, press ">". To create an arbitrary graph, press "^".</li>
+                            <li>To add a node to a before or an arbitrary graph, either create a node while the before/graph's background is selected or try to create an edge from the before/graph to the node.</li>
+                        </ul> 
+                </details>
+            </article>
         </div>
     </div>
 </section>
 
-    <script src="js/code.js"></script>
-    <script src="_build/default/src/main.bc.js"></script>
+<script src="js/code.js"></script>
+<script src="_build/default/src/main.bc.js"></script>
+
 </body>
 
 </html>
