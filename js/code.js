@@ -502,8 +502,13 @@ function keyPressCy2(string) {
             selected.data('label', "");
             const id_rep = new_id + "-rep";
             const barycenter = weightedBarycenter(selected[0], mousePosition2.x, mousePosition2.y);
-            const x = barycenter.x + 0.4 * mousePosition2.x;
-            const y = barycenter.y + 0.4 * mousePosition2.y;
+            let x_coord = 0.6 * barycenter.x + 0.4 * mousePosition2.x;
+            let y_coord = 0.6 * barycenter.y + 0.4 * mousePosition2.y;
+            if (!selected.isParent()) {
+                x_coord = selected.renderedPosition().x;
+                y_coord = selected.renderedPosition().y;
+                console.log(x_coord);
+            };
             const rep_node = {
                 group: 'nodes',
                 data: {
@@ -512,8 +517,8 @@ function keyPressCy2(string) {
                     parent: selected[0].id(),
                 },
                 renderedPosition: {
-                    x: x,
-                    y: y,
+                    x: x_coord,
+                    y: y_coord,
                 },
             };
             const added_rep = cy2.add(rep_node);
@@ -608,6 +613,12 @@ cy2.on('click', "node", function(evt){
             if (target.hasClass("root")) {target.removeClass("root"); getRoot(source).addClass("root")};
             const id_rep = target.id() + "-rep";
             const barycenter = weightedBarycenter(source, target.renderedPosition().x, target.renderedPosition().y);
+            let x_coord = 0.6 * barycenter.x + 0.4 * target.renderedPosition().x;
+            let y_coord = 0.6 * barycenter.y + 0.4 * target.renderedPosition().y;
+            if (!source.isParent()) {
+                x_coord = source.renderedPosition().x;
+                y_coord = source.renderedPosition().y;
+            }
             const rep_node = {
                 group: 'nodes',
                 data: {
@@ -616,8 +627,8 @@ cy2.on('click', "node", function(evt){
                     parent: source.id(),
                 },
                 renderedPosition: {
-                    x: barycenter.x + 0.4 * target.renderedPosition().x,
-                    y: barycenter.y + 0.4 * target.renderedPosition().y,
+                    x: x_coord,
+                    y: y_coord,
                 },
             };
             const added_rep = cy2.add(rep_node);
