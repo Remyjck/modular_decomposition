@@ -490,9 +490,12 @@ function keyPressCy2(string) {
                 y : mousePosition2.y,
             },
         };
+        const firstNode = cy2.nodes().empty();
         const added = cy2.add(node);
         added.addClass(class_);
         cy2.changes.push(["add", added]);
+
+        if (firstNode) {added.addClass("root")};
         
         const selected = cy2.nodes(':selected');
         if (selected.length == 1 && (selected[0].hasClass("prime") || selected[0].hasClass("before"))) {
@@ -547,7 +550,7 @@ function getBeforeRoot(node) {
 };
 
 function getRoot(node) {
-    if (node.data("parent")) {return getRoot(cy2.$id(node.data("parent")))};
+    if (node.isChild()) {return getRoot(node.parent())};
     const pred = node.predecessors().nodes()[0];
     if (pred) {return getRoot(pred)}
     else {return node};
@@ -569,13 +572,13 @@ cy2.on('click', "node", function(evt){
     if (source.isChild()) {
         if (target.isChild()) {
             // if they share the same parent, make the edge an inner edge, otherwise do nothing
-            if (target.data('parent') == source.data('parent')) { classes.push('compoundIn') }
-            else { return };
+            if (target.data('parent') != source.data('parent')) {return};
+            classes.push('compoundIn');
 
             if (source.parent().hasClass("before")) {
                 if (target.successors()['+'](target).intersection(source.successors()['+'](source)).nonempty()) {return};
                 classes.push("before"); 
-                const root = getRoot(source);
+                const root = getBeforeRoot(source);
                 source.parent().children().removeClass("before-root");
                 root.addClass("before-root");
             };
@@ -596,7 +599,13 @@ cy2.on('click', "node", function(evt){
         // If the target is a child and the source is not a child, do nothing
         if (target.isChild()) {return};
 
-        if (source.hasClass("prime")) {
+        // If the target already has an incoming edge, do nothing
+        if (target.incomers().nonempty()) {return};
+
+        if (target.successors()['+'](target).intersection(source.successors()['+'](source)).nonempty()) {return};
+
+        if (source.hasClass("prime") || source.hasClass("before")) {
+            if (target.hasClass("root")) {target.removeClass("root"); getRoot(source).addClass("root")};
             const id_rep = target.id() + "-rep";
             const barycenter = weightedBarycenter(source, target.renderedPosition().x, target.renderedPosition().y);
             const rep_node = {
@@ -623,11 +632,16 @@ cy2.on('click', "node", function(evt){
             };
             const added_rep_edge = cy2.add(rep_edge);
             added_rep_edge.addClass('compoundOut');
-        };
-        // If the target already has an incoming edge, do nothing
-        if (target.incomers().nonempty()) {return};
 
-        if (target.successors()['+'](target).intersection(source.successors()['+'](source)).nonempty()) {return};
+            if (source.hasClass("before")) {
+                added_rep.addClass("before");
+                if (target.successors()['+'](target).intersection(source.successors()['+'](source)).nonempty()) {return};
+                const root = getBeforeRoot(source);
+                source.parent().children().removeClass("before-root");
+                root.addClass("before-root");
+            }
+            return;
+        };
     };
 
     if (!source.isChild() && !target.isChild()) {
