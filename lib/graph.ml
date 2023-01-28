@@ -99,7 +99,7 @@ let add_vertex vertex graph =
 (** [remove_vertex vertex edges]: given a mapping [edges], remove [vertex] from
     its keys and values  *)
 let remove_vertex_edges v edges =
-  Map.remove edges v |> Map.map ~f:(Util.flip Set.remove v)
+  Map.remove edges v |> Map.map ~f:(Fn.flip Set.remove v)
 
 let remove_vertices_edges vertices edges =
   Set.fold vertices ~init:edges ~f:(fun accum v -> remove_vertex_edges v accum)
@@ -115,7 +115,7 @@ let disjoint s1 s2 =
 
 let complement_map set map =
   Map.filter_keys map ~f:(fun ele -> Set.mem set ele |> not)
-  |> Map.map ~f:(Util.flip Set.diff set)
+  |> Map.map ~f:(Fn.flip Set.diff set)
 
 (** [<~> graph vertices]: subgraph of [graph] that contains all vertices not in
     [vertices] *)
@@ -141,7 +141,7 @@ let successors graph vertices =
           | Some vset -> vset
         in
         Set.union accum to_add)
-    |> Util.flip Set.diff vertices
+    |> Fn.flip Set.diff vertices
 
 let neighbour graph vertex =
   let edges_to = match Map.find graph.edges vertex with
@@ -155,10 +155,10 @@ let neighbour graph vertex =
 let replace graph h vertex state =
   let () = assert(Set.is_subset h ~of_:graph.nodes) in
   let () = add_vertices_to_hash h state in
-  let new_nodes = Set.diff graph.nodes h |> Util.flip Set.add vertex in
+  let new_nodes = Set.diff graph.nodes h |> Fn.flip Set.add vertex in
   let removed_edges = remove_vertices_edges h graph.edges in
 
-  let new_successors = successors graph h |> Util.flip Set.diff h in
+  let new_successors = successors graph h |> Fn.flip Set.diff h in
   let new_edges = Map.update removed_edges vertex ~f:(function
     | None -> new_successors
     | Some vset -> Set.union vset new_successors)
@@ -180,7 +180,7 @@ let connect_vertices vertices vertex graph =
 
 let intersect_map set map =
   Map.filter_keys map ~f:(Set.mem set)
-  |> Map.map ~f:(Util.flip Set.inter set)
+  |> Map.map ~f:(Fn.flip Set.inter set)
 
 (** [induced_subgraph graph vertices]: subgraph of [graph] that contains only
     the vertices in [vertices]  *)
@@ -210,7 +210,7 @@ let is_module g h =
 
 (** [edge_tuple_list ?directed edges]: given a mapping [edges],
     return a corresponding list of edges  *)
-let rec edge_tuple_list ?directed edge_map =
+let rec edge_tuple_list edge_map =
   if Map.is_empty edge_map then
     []
   else
@@ -219,12 +219,9 @@ let rec edge_tuple_list ?directed edge_map =
       ~init:[]
       ~f:(fun accum vj -> (vi, vj) :: accum)
     in
-    let new_edge_map = if Util.resolve directed then
-        Map.remove edge_map vi
-      else
-        remove_vertex_edges vi edge_map
+    let new_edge_map = remove_vertex_edges vi edge_map
     in
-    new_edges @ edge_tuple_list ?directed:directed new_edge_map
+    new_edges @ edge_tuple_list new_edge_map
 
 let add_or_init v y =
   match v with

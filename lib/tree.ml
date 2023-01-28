@@ -79,7 +79,7 @@ let tree_from_condensed (graph : Graph.graph) state =
           {connective = Prime (id_graph, tree_list); id = vertex.id}
 
       and trees_from_id_list id_list state =
-        List.map id_list ~f:(Util.flip tree_from_id state)
+        List.map id_list ~f:(Fn.flip tree_from_id state)
       in
       Some (tree_from_id root.id state)
 
