@@ -29,7 +29,7 @@ let remove_id id map =
 let from_map map =
   let nodes = Map.keys map in
   let edges =
-    let rec id_tuples_from_map (map : Graph.IMap.t) =
+    let rec id_tuples_from_map (map : Util.IMap.t) =
       if Map.is_empty map then
         []
       else

@@ -1,20 +1,11 @@
 open Base
+open Util
 
 type atom = {
     label : string;
     pol : bool;
   }
   [@@deriving compare, sexp, hash]
-
-module ISet = struct
-  type t = Base.Set.M(Int).t [@@deriving compare, sexp, hash]
-end
-include Comparable.Make(ISet)
-
-module IMap = struct
-  type t = ISet.t Base.Map.M(Int).t [@@deriving compare, sexp, hash]
-end
-include Comparable.Make(IMap)
 
 type node =
   | Atom of atom
@@ -66,9 +57,12 @@ module VMap = struct
   type t = VSet.t Base.Map.M(Vertex).t
 end
 
+type verticies = VSet.t
+type edges = VMap.t
+
 type graph = {
-    nodes : VSet.t;
-    edges : VMap.t;
+    nodes : verticies;
+    edges : edges;
   }
 
 let show graph =
@@ -87,7 +81,7 @@ let fresh_id state =
   state.total_vertices <- state.total_vertices + 1;
   state.total_vertices
 
-let add_vertices_to_hash vertices state =
+let add_vertices_to_hash (vertices:verticies) state =
   Set.iter vertices
   ~f:(fun v -> Hashtbl.add_exn state.id_map ~key:v.id ~data:v)
 
@@ -98,10 +92,10 @@ let add_vertex vertex graph =
 
 (** [remove_vertex vertex edges]: given a mapping [edges], remove [vertex] from
     its keys and values  *)
-let remove_vertex_edges v edges =
+let remove_vertex_edges v (edges:edges) : edges =
   Map.remove edges v |> Map.map ~f:(Fn.flip Set.remove v)
 
-let remove_vertices_edges vertices edges =
+let remove_vertices_edges (vertices: verticies) edges =
   Set.fold vertices ~init:edges ~f:(fun accum v -> remove_vertex_edges v accum)
 
 let remove_vertex v graph =
@@ -109,17 +103,11 @@ let remove_vertex v graph =
   let new_edges = remove_vertex_edges v graph.edges in
   {nodes = new_nodes; edges = new_edges}
 
-let disjoint s1 s2 =
-  let diff = Set.diff s1 s2 in (* O(l1 + l2) *)
-  Set.equal s1 diff (* O(l1 + l2) *)
 
-let complement_map set map =
-  Map.filter_keys map ~f:(fun ele -> Set.mem set ele |> not)
-  |> Map.map ~f:(Fn.flip Set.diff set)
 
-(** [<~> graph vertices]: subgraph of [graph] that contains all vertices not in
+(** [graph_difference graph vertices]: subgraph of [graph] that contains all vertices not in
     [vertices] *)
-let (<~>) graph vertices =
+let graph_difference graph (vertices: verticies) =
   let nodes = Set.diff graph.nodes vertices in
   let edges = complement_map vertices graph.edges in
   {nodes = nodes; edges = edges}
@@ -131,7 +119,7 @@ let find_or_empty map v =
 
 (** [successors graph vertices]: set of vertices to which [vertices] is
     connected *)
-let successors graph vertices =
+let successors graph (vertices: verticies) : verticies =
     Set.fold vertices
       ~init:(Set.empty (module Vertex))
       ~f:(fun accum v ->
@@ -143,16 +131,15 @@ let successors graph vertices =
         Set.union accum to_add)
     |> Fn.flip Set.diff vertices
 
-let neighbour graph vertex =
-  let edges_to = match Map.find graph.edges vertex with
+let neighbour graph (vertex:vertex) : verticies =
+  match Map.find graph.edges vertex with
     | None -> Set.empty (module Vertex)
     | Some set -> set
-  in
-  edges_to
+
 
 (** [replace graph vertices vertex]: replace all vertices in [vertices] by
     [vertex] in [graph] *)
-let replace graph h vertex state =
+let replace graph (h:verticies) vertex state =
   let () = assert(Set.is_subset h ~of_:graph.nodes) in
   let () = add_vertices_to_hash h state in
   let new_nodes = Set.diff graph.nodes h |> Fn.flip Set.add vertex in
@@ -167,7 +154,7 @@ let replace graph h vertex state =
 
 (** [connect_vertices vertices vertex graph]: for a given [graph],
     add edges connecting every element of [vertices] to [vertex] *)
-let connect_vertices vertices vertex graph =
+let connect_vertices (vertices:verticies) vertex graph =
   let () = assert(Set.mem graph.nodes vertex) in
   let () = assert(Set.for_all vertices ~f:(Set.mem graph.nodes)) in
   let edges = Set.fold vertices ~init:graph.edges ~f:(fun accum v ->
@@ -178,25 +165,21 @@ let connect_vertices vertices vertex graph =
     let edges = Map.update edges vertex ~f:(function | None -> vertices | Some vset -> (Set.union vset vertices)) in
     {nodes=graph.nodes; edges=edges}
 
-let intersect_map set map =
-  Map.filter_keys map ~f:(Set.mem set)
-  |> Map.map ~f:(Fn.flip Set.inter set)
-
 (** [induced_subgraph graph vertices]: subgraph of [graph] that contains only
     the vertices in [vertices]  *)
-let induced_subgraph graph vertices =
+let induced_subgraph graph (vertices: verticies) =
   let edges = intersect_map vertices graph.edges in
   {nodes = vertices; edges = edges}
 
-(** [w G H h]: set of vertices of [G <~> H] to which [h] is connected *)
-let w g h v =
+(** [w G H h]: set of vertices of [graph_difference G H] to which [h] is connected *)
+let w g (h:verticies) v : verticies =
   let new_h = Set.remove h v in
-  match Map.find (g <~> new_h).edges v with
+  match Map.find (graph_difference g new_h).edges v with
   | None -> Set.empty (module Vertex)
   | Some vset -> vset
 
 (** [is_module G H]: checks if [H] is a module of [G] *)
-let is_module g h =
+let is_module g (h:verticies) =
   let connected =
     match Set.choose h with
     | None -> Set.empty (module Vertex)
@@ -208,9 +191,9 @@ let is_module g h =
       let v_connected = w g h v in
       Set.equal connected v_connected)
 
-(** [edge_tuple_list ?directed edges]: given a mapping [edges],
+(** [edge_tuple_list edges]: given a mapping [edges],
     return a corresponding list of edges  *)
-let rec edge_tuple_list edge_map =
+let rec edge_tuple_list (edge_map: edges) =
   if Map.is_empty edge_map then
     []
   else
@@ -223,14 +206,14 @@ let rec edge_tuple_list edge_map =
     in
     new_edges @ edge_tuple_list new_edge_map
 
-let add_or_init v y =
+let add_or_init (v:verticies option) y : verticies option=
   match v with
   | None -> Some (Set.singleton (module Vertex) y)
   | Some z -> Some (Set.add z y)
 
 (** [edge_map ~reverse edge_tuple_list]: given a list of edges [edge_tuple_list],
     return a corresponding mapping, if [reverse] then the mapping is from targets to sources *)
-let edge_map ~reverse edge_tuple_list =
+let edge_map ~reverse edge_tuple_list : edges =
   let rec edge_list_to_map edges map =
     match edges with
     | [] -> map
@@ -245,7 +228,7 @@ let edge_map ~reverse edge_tuple_list =
   in
   edge_list_to_map edge_tuple_list (Map.empty (module Vertex))
 
-let edge_maps edge_list =
+let edge_maps edge_list : edges =
       Map.merge_skewed (edge_map ~reverse:false edge_list) (edge_map ~reverse:true edge_list)
         ~combine:(fun ~key:_ v1 v2 -> Set.union v1 v2)
 
@@ -258,13 +241,13 @@ let to_graph vertex_list edge_list =
   let edges = edge_maps edge_list in
   {nodes=vertices; edges=edges}, {total_vertices=max_id; id_map=Hashtbl.create (module Int)}
 
-let vset_to_iset vset =
+let vset_to_iset (vset : verticies) : ISet.t =
   Set.map (module Int) vset ~f:(fun v -> v.id)
 
-let iset_to_vset map iset =
+let iset_to_vset map (iset:ISet.t) : verticies =
   Set.map (module Vertex) iset ~f:(fun i -> Map.find_exn map i)
 
-let vmap_to_imap map nodes =
+let vmap_to_imap (map: edges) (nodes:verticies) : IMap.t =
   let empty_map = Set.fold nodes ~init:(Map.empty (module Int))
     ~f:(fun accum vertex ->
       Map.add_exn accum ~key:vertex.id ~data:(Set.empty (module Int)))
@@ -279,7 +262,7 @@ let vmap_to_imap map nodes =
 
 (** [id_map vset]: returns a map from the [id]s of the elements of [vset] to
     the elements themselves *)
-let id_map vset =
+let id_map (vset: verticies) =
   Set.fold vset
     ~init:(Map.empty (module Int))
     ~f:(fun accum vertex ->
@@ -287,7 +270,7 @@ let id_map vset =
 
 (** [vertex_neighbour_pairs vertices edge_map]: return an assoc list from every
     vertex to one of its neighbours *)
-let vertex_neighbour_pairs v edge_map =
+let vertex_neighbour_pairs v (edge_map:edges) : verticies list =
   List.map v
     ~f:(fun vi ->
       let vi_neighbours = Map.find_exn edge_map vi in
