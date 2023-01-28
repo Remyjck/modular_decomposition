@@ -206,7 +206,7 @@ let rec edge_tuple_list (edge_map: edges) =
     in
     new_edges @ edge_tuple_list new_edge_map
 
-let add_or_init (v:verticies option) y : verticies option=
+let add_or_init y (v:verticies option): verticies option=
   match v with
   | None -> Some (Set.singleton (module Vertex) y)
   | Some z -> Some (Set.add z y)
@@ -220,9 +220,9 @@ let edge_map ~reverse edge_tuple_list : edges =
     | (x, y) :: t ->
       let new_map =
         if reverse then
-          Map.change map y ~f:(fun v -> add_or_init v x)
+          Map.change map y ~f:(add_or_init x)
         else
-          Map.change map x ~f:(fun v -> add_or_init v y)
+          Map.change map x ~f:(add_or_init y)
       in
       edge_list_to_map t new_map
   in

@@ -13,6 +13,9 @@ let intersect_map set map =
   Map.filter_keys map ~f:(Set.mem set)
   |> Map.map ~f:(Fn.flip Set.inter set)
 
+let remove_id id map =
+  Map.remove map id |> Map.map ~f:(fun v -> Set.remove v id)
+
 module ISet = struct
   type t = Base.Set.M(Int).t [@@deriving compare, sexp, hash]
 end

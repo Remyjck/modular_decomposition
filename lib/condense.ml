@@ -1,10 +1,6 @@
 open Graph
 open Base
 
-module VSetSet = struct
-  type t = Base.Set.M(VSet).t
-end
-
 type subset =
   | Singleton of vertex
   | Clique of VSet.t
@@ -41,36 +37,6 @@ let smallest_condensible graph vset =
     add_to_set new_res new_to_add
   in
   Some (add_to_set (Set.empty (module Vertex)) vset)
-
-(** [update_subset subset v1 succ(v1) v2 succ(v2)]: add [v2] to [subset]
-    if it belongs to the same subset as [v1] *)
-let update_subset subset vi vi_neighbours vj vj_neighbours =
-  match subset with
-  | Singleton vertex ->
-    if VSet.equal vj_neighbours vi_neighbours then
-      IndSet (Set.of_list (module Vertex) [vertex; vj])
-    else
-      if VSet.equal (Set.remove vj_neighbours vi) (Set.remove vi_neighbours vj) then
-          Clique (Set.of_list (module Vertex) [vertex; vj])
-      else
-        subset
-  | IndSet set ->
-    if VSet.equal vj_neighbours vi_neighbours then
-      IndSet (Set.add set vj)
-    else
-      subset
-  | Clique set ->
-    if Set.equal (Set.add vj_neighbours vj) (Set.add vi_neighbours vi) then
-      Clique (Set.add set vj)
-    else
-      subset
-
-(** [update_subsetset subsetset new_subset]: given a set of subsets [subsetset],
-    update it by adding [new_subset] *)
-let update_subsetset subsetset new_subset =
-  match new_subset with
-  | Singleton _ -> subsetset
-  | _ -> Set.add subsetset new_subset
 
 let subset_contains v subset =
   match subset with

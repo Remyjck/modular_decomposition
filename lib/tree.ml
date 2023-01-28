@@ -23,10 +23,7 @@ let successors tree =
   | Par tl -> tl
   | Prime (_, tl) -> tl
 
-let remove_id id map =
-  Map.remove map id |> Map.map ~f:(fun v -> Set.remove v id)
-
-let from_map map =
+let from_map (map: Util.IMap.t) =
   let nodes = Map.keys map in
   let edges =
     let rec id_tuples_from_map (map : Util.IMap.t) =
@@ -34,7 +31,7 @@ let from_map map =
         []
       else
         let id, id_neighbours = Map.min_elt_exn map in
-        let new_imap = remove_id id map
+        let new_imap = Util.remove_id id map
         in
         let new_edges = Set.fold id_neighbours
           ~init:[]
@@ -112,7 +109,7 @@ let tree_to_graph tree =
           let edges = join_sets vsetacc vset in
           vertices, edges @ edge_base)
       in
-      nodes, edges
+      (nodes, edges)
     | Prime (id_graph, tl) ->
       let vertices, edges, id_map = List.fold tl ~init:(Set.empty (module Graph.Vertex), [], Map.empty (module Int))
         ~f:(fun (vset, el, map) t ->
@@ -128,7 +125,7 @@ let tree_to_graph tree =
           in
           new_edges @ el)
       in
-      vertices, new_edges @ edges
+      (vertices, new_edges @ edges)
   in
   let vertices, edges = tree_to_graph_r tree in
   let edges = Graph.edge_maps edges in
