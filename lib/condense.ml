@@ -31,7 +31,7 @@ let smallest_condensible graph vset =
   let rec add_to_set res to_add =
     if Set.is_empty to_add then res else
     let new_res = Set.union res to_add in
-    let new_connected = successors graph new_res |> Util.flip Set.diff res in
+    let new_connected = successors graph new_res |> Fn.flip Set.diff res in
     let new_to_add = Set.fold new_res
       ~init:(Set.empty (module Vertex))
       ~f:(fun acum v ->
@@ -85,8 +85,8 @@ let subset_add v subset =
   | IndSet vset -> IndSet (Set.add vset v)
 
 let share_module graph vi vj =
-  let si = find_or_empty graph.edges vi |> Util.flip Set.remove vj in
-  let sj = find_or_empty graph.edges vj |> Util.flip Set.remove vi in
+  let si = find_or_empty graph.edges vi |> Fn.flip Set.remove vj in
+  let sj = find_or_empty graph.edges vj |> Fn.flip Set.remove vi in
   VSet.equal si sj
 
 (* Algorithm 3.5 *)
