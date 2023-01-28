@@ -7,7 +7,6 @@ type connective =
   | Atom of Graph.atom
   | Tensor of tree list
   | Par of tree list
-  | Before of tree list
   | Prime of id_graph * (tree list)
 
 and tree = {
@@ -17,6 +16,6 @@ and tree = {
 
 val successors : tree -> tree list
 
-val tree_from_condensed : ?directed:bool -> Graph.graph -> Graph.state -> tree option
+val tree_from_condensed : Graph.graph -> Graph.state -> tree option
 
-val tree_to_graph : ?directed:bool -> tree -> Graph.graph
+val tree_to_graph : tree -> Graph.graph
