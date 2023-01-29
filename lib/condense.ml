@@ -1,5 +1,6 @@
 open Graph
 open Base
+open Graph_module
 
 type subset =
   | Singleton of vertex
@@ -50,10 +51,7 @@ let subset_add v subset =
   | Clique vset -> Clique (Set.add vset v)
   | IndSet vset -> IndSet (Set.add vset v)
 
-let share_module graph vi vj =
-  let si = find_or_empty graph.edges vi |> Fn.flip Set.remove vj in
-  let sj = find_or_empty graph.edges vj |> Fn.flip Set.remove vi in
-  VSet.equal si sj
+
 
 (* Algorithm 3.5 *)
 (** [cc_and_is graph]: returns the set of maximal condensible cliques and
@@ -80,17 +78,6 @@ let cc_and_is g =
     )
   );
   !res
-
-(** [subset_set_to_nodes subsetset]: given a set of subsets, convert each subset
-    to a [node] and return them in a list *)
-let subset_set_to_nodes subsetset =
-  Set.fold subsetset
-    ~init:[]
-    ~f:(fun accum ss ->
-      match ss with
-      | Singleton _ -> accum
-      | Clique vset -> Tensor (vset_to_iset vset) :: accum
-      | IndSet vset -> Par (vset_to_iset vset) :: accum)
 
 (** [condense_subset subset graph]: given [subset], condense its vertices into a
     fresh vertex in [graph] *)

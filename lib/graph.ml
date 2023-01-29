@@ -178,19 +178,6 @@ let w g (h:verticies) v : verticies =
   | None -> Set.empty (module Vertex)
   | Some vset -> vset
 
-(** [is_module G H]: checks if [H] is a module of [G] *)
-let is_module g (h:verticies) =
-  let connected =
-    match Set.choose h with
-    | None -> Set.empty (module Vertex)
-    | Some v ->
-    w g h v
-  in
-  Set.for_all h
-    ~f:(fun v ->
-      let v_connected = w g h v in
-      Set.equal connected v_connected)
-
 (** [edge_tuple_list edges]: given a mapping [edges],
     return a corresponding list of edges  *)
 let rec edge_tuple_list (edge_map: edges) =
