@@ -61,6 +61,7 @@ let cc_and_is g =
   let res = ref (Set.empty (module Subset)) in
   let v = Set.elements g.nodes in
   List.iteri v ~f:(fun i vi ->
+    let vi_successors = find_or_empty g.edges vi in
     List.iteri v ~f:(fun j vj ->
       if j <= i then () else
       if Set.mem !visited vj then () else
@@ -68,7 +69,11 @@ let cc_and_is g =
         let () = visited := Set.add !visited vj in
         if not (Set.mem !visited vi) then
           let () = visited := Set.add !visited vi in
-          let subset = Clique (Set.of_list (module Vertex) [vi; vj]) in
+          let subset =
+            if Set.mem vi_successors vj then
+                Clique (Set.of_list (module Vertex) [vi; vj])
+            else IndSet (Set.of_list (module Vertex) [vi; vj])
+          in
           res := Set.add !res subset;
         else
           let subset = Set.find_exn !res ~f:(subset_contains vi) in

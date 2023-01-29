@@ -4,7 +4,9 @@ open Base
 let path = "./graph.json"
 
 let graph, state = Parsegraph.read_file_as_graph path
-let graph2, state2 = Parsegraph.read_file_as_graph path
+
+let _ = Graph.show graph
+
 
 let condensed_graph = Condense.condense_cliques graph state
 
