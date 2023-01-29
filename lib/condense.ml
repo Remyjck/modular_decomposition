@@ -71,8 +71,9 @@ let cc_and_is g =
           let () = visited := Set.add !visited vi in
           let subset =
             if Set.mem vi_successors vj then
-                Clique (Set.of_list (module Vertex) [vi; vj])
-            else IndSet (Set.of_list (module Vertex) [vi; vj])
+              Clique (Set.of_list (module Vertex) [vi; vj])
+            else
+              IndSet (Set.of_list (module Vertex) [vi; vj])
           in
           res := Set.add !res subset;
         else

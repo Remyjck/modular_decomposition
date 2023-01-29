@@ -137,18 +137,22 @@ let neighbour graph (vertex:vertex) : verticies =
     | Some set -> set
 
 
-(** [replace graph vertices vertex]: replace all vertices in [vertices] by
-    [vertex] in [graph] *)
-let replace graph (h:verticies) vertex state =
+let replace graph h vertex state =
   let () = assert(Set.is_subset h ~of_:graph.nodes) in
   let () = add_vertices_to_hash h state in
   let new_nodes = Set.diff graph.nodes h |> Fn.flip Set.add vertex in
   let removed_edges = remove_vertices_edges h graph.edges in
 
   let new_successors = successors graph h |> Fn.flip Set.diff h in
+  let new_predecessors = successors graph h |> Fn.flip Set.diff h in
   let new_edges = Map.update removed_edges vertex ~f:(function
     | None -> new_successors
     | Some vset -> Set.union vset new_successors)
+  in
+  let new_edges = Set.fold new_predecessors ~init:new_edges ~f:(fun accum v ->
+    Map.update accum v ~f:(function
+      | None -> Set.singleton (module Vertex) vertex
+      | Some vset -> Set.add vset vertex))
   in
   {nodes = new_nodes; edges = new_edges}
 
