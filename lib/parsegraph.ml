@@ -150,3 +150,8 @@ let rec serialize_tree (tree : Tree.tree) : Yojson.Basic.t =
     ("node", node);
     ("successors", `List successors)
   ]
+
+  let read_file_as_graph filepath =
+  let s = Stdio.In_channel.read_all filepath in
+  let js_obj = Yojson.Basic.from_string s in
+  parse js_obj
