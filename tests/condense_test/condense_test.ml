@@ -4,19 +4,16 @@ open Base
 let path = "./graph.json"
 
 let graph, state = Parsegraph.read_file_as_graph path
-
-let _ = Graph.show graph
+let graph2, state2 = Parsegraph.read_file_as_graph path
 
 
 let condensed_graph = Condense.condense_cliques graph state
-
-let _ = Graph.show condensed_graph
 
 let%test_unit "Condensed_Nodes_Count" = [%test_eq: int] (Set.length condensed_graph.nodes) 5
 let%test_unit "Condensed_Edges_Count" = [%test_eq: int] (Map.length condensed_graph.edges) 5
 let%test_unit  "Condensed_Edges_Tuple_Count" = [%test_eq: int] (List.length (Graph.edge_tuple_list condensed_graph.edges)) 6
 
-(*
+
 let min_cond = Condense.condensible_subgraphs condensed_graph
 let%test _ = Set.length min_cond = 1
 
@@ -42,4 +39,3 @@ let () =
 let res2 = Condense.process graph2 state2
 let%test _ = Graph.VSet.equal res.nodes res2.nodes
 let%test _  = Hashtbl.equal (Graph.Vertex.equal) state.id_map state2.id_map
-*)
