@@ -10,13 +10,9 @@ let graph2, state2 = Parsegraph.read_file_as_graph path
 let vertex = {Graph.connective = Atom {label = "new"; pol = true}; id = Graph.fresh_id state}
 let%test _ = vertex.id = 9
 
-let graph = Graph.add_vertex vertex graph
-let%test _ = Set.mem graph.nodes vertex
 
-let graph = Graph.remove_vertex vertex graph
-let%test _ = Set.mem graph.nodes vertex |> not
-
-let () = state.total_vertices <- state.total_vertices - 1
+let graph3 = Graph.add_vertex vertex graph
+let%test _ = Set.mem graph3.nodes vertex
 
 let vset1, vset2 = Set.partition_tf graph.nodes ~f:(fun v -> v.id % 2 = 0)
 let%test _ = Util.disjoint vset1 vset2
@@ -34,7 +30,7 @@ let () = assert(Graph.VSet.equal neighbours vset2)
 let dummy_graph = Graph.replace graph vset1 vertex dummy_state
 let%test _ = Util.disjoint vset1 dummy_graph.nodes
 let%test _ = not (Hashtbl.is_empty dummy_state.id_map)
-let%test _ = Graph.VSet.equal (Graph.neighbour dummy_graph vertex) neighbours
+let%test _ = Graph.VSet.equal (Graph.find_or_empty dummy_graph.edges vertex) neighbours
 
 let%test _ =
     let graph = Graph.add_vertex vertex graph in
