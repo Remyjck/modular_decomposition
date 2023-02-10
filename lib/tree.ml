@@ -80,6 +80,8 @@ let tree_from_condensed (graph : Graph.graph) state =
       in
       Some (tree_from_id root.id state)
 
+let tree_from_graph graph state = tree_from_condensed (Condense.process graph state) state
+
 (** [tree_to_graph tree] converts a tree to a graph *)
 let tree_to_graph tree =
   let join_sets vs1 vs2 =

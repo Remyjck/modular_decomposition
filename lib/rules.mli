@@ -6,3 +6,12 @@
    2. match patterns against it
 *)
 (*Each node is the graph that is being composed via*)
+
+(*atomic identity down - ai_down*)
+val atomic_identity_down: Tree.tree -> Tree.tree
+
+(*super switch down - ss_down*)
+val super_switch_down: Tree.tree -> Tree.tree
+
+(*prime down - p_down*)
+val prime_down: Tree.tree -> Tree.tree

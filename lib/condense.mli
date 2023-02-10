@@ -17,5 +17,6 @@ val condense_set :
   (subset, 'a) Base.Set.t -> Graph.graph -> Graph.state -> Graph.graph
 val condense_cliques : Graph.graph -> Graph.state -> Graph.graph
 val return : Graph.graph -> Graph.state -> Graph.graph
+(*Process converts a graph into the modular decomposition of the graph*)
 val process : Graph.graph -> Graph.state -> Graph.graph
 val isPrime : Graph.graph -> bool
