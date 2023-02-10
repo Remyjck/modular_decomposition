@@ -107,35 +107,6 @@ let from_id_graph (id_graph : Tree.id_graph) =
   let edges_json = `List edges in
   `Assoc [("nodes", nodes_json); ("edges", edges_json)]
 
-let rec serialized_nodes_and_edges (tree : Tree.tree) =
-  let connective, id_graph = from_connective tree.connective in
-  let id = `Int tree.id in
-  let successors = Tree.successors tree in
-  let node_base = [("connective", connective); ("id", id)] in
-  let new_node =
-    match id_graph with
-      | None -> `Assoc node_base
-      | Some id_graph -> `Assoc (
-        ("graph", (from_id_graph id_graph)) :: node_base)
-  in
-  match successors with
-  | [] ->  ([new_node], [])
-  | l ->
-    let nodes, edges = List.map l ~f:serialized_nodes_and_edges |> Stdlib.List.split in
-    let node = new_node :: (List.concat nodes) in
-    let new_edges = List.map successors
-      ~f:(fun (t : Tree.tree) ->
-        `Assoc [("source", id); ("target", `Int t.id)])
-    in
-    let edge = new_edges @ List.concat edges in
-    node, edge
-
-let serialize_tree_as_graph (tree : Tree.tree) =
-  let nodes, edges = serialized_nodes_and_edges tree in
-  let json_nodes = `List nodes in
-  let json_edges = `List edges in
-  `Assoc [("nodes", json_nodes); ("edges", json_edges)]
-
 let rec serialize_tree (tree : Tree.tree) : Yojson.Basic.t =
   let id = `Int tree.id in
   let connective, id_graph = from_connective tree.connective in

@@ -16,10 +16,6 @@ module Subset = struct
   include Comparable.Make(T)
 end
 
-module Subsetset = struct
-  type t = Set.M(Subset).t
-end
-
 (* Algorithm 2.2 *)
 (** [smallest_condensible graph set]: returns the smallest condensible set
     containing all vertices of [set] *)
