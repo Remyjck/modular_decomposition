@@ -1,26 +1,27 @@
-let flip f x y = f y x
+open Base
 
-let rec before v1 v2 vl =
-  match vl with
-  | [] -> raise Not_found
-  | v :: _ when (v = v1) -> true
-  | v :: _ when (v = v2) -> false
-  | _ :: t -> before v1 v2 t
+let disjoint s1 s2 =
+  let diff = Set.diff s1 s2 in (* O(l1 + l2) *)
+  Set.equal s1 diff (* O(l1 + l2) *)
 
-let index elem l =
-  let rec index_r elem l i =
-    match l with
-    | [] -> raise Not_found
-    | h :: t ->
-      if h = elem then i else index_r elem t (i+1)
-  in
-  index_r elem l 0
+let complement_map set map =
+  Map.filter_keys map ~f:(fun ele -> Set.mem set ele |> not)
+  |> Map.map ~f:(Fn.flip Set.diff set)
 
-(** Given [string] of the form [[0-9]*-rep], return the integer written without the "rep" *)
-let remove_rep string = 
-  let () = assert (Stdlib.String.ends_with ~suffix:"-rep" string) in
-  Base.String.lsplit2_exn string ~on:'-' |> fst |> Base.Int.of_string
 
-let resolve = function
-  | None -> false
-  | Some bool -> bool
+let intersect_map set map =
+  Map.filter_keys map ~f:(Set.mem set)
+  |> Map.map ~f:(Fn.flip Set.inter set)
+
+let remove_id id map =
+  Map.remove map id |> Map.map ~f:(fun v -> Set.remove v id)
+
+module ISet = struct
+  type t = Base.Set.M(Int).t [@@deriving compare, sexp, hash]
+end
+include Comparable.Make(ISet)
+
+module IMap = struct
+  type t = ISet.t Base.Map.M(Int).t [@@deriving compare, sexp, hash]
+end
+include Comparable.Make(IMap)
