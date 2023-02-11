@@ -1,0 +1,15 @@
+{
+  "nodes": [
+    {
+      "id": 9,
+      "label": "a",
+      "polarisation": false
+    },
+    {
+      "id": 11,
+      "label": "a",
+      "polarisation": true
+    }
+  ],
+  "edges": []
+}

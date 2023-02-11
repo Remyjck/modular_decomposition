@@ -7,8 +7,10 @@
 *)
 (*Each node is the graph that is being composed via*)
 
+(*For now we will model empty trees as an none option*)
+
 (*atomic identity down - ai_down*)
-val atomic_identity_down: Tree.tree -> Tree.tree
+val atomic_identity_down: Tree.tree -> Tree.tree option
 
 (*super switch down - ss_down*)
 val super_switch_down: Tree.tree -> Tree.tree

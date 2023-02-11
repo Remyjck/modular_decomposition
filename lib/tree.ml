@@ -132,3 +132,5 @@ let tree_to_graph tree =
   let vertices, edges = tree_to_graph_r tree in
   let edges = Graph.edge_maps edges in
   {Graph.nodes = vertices; edges = edges}
+
+let show tree = Graph.show (tree_to_graph tree)

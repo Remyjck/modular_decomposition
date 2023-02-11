@@ -10,3 +10,4 @@ val from_map : Util.IMap.t -> id_graph
 val tree_from_condensed : Graph.graph -> Graph.state -> tree option
 val tree_to_graph : tree -> Graph.graph
 val tree_from_graph : Graph.graph -> Graph.state -> tree option
+val show : tree -> unit
