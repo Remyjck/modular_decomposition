@@ -16,7 +16,8 @@ let atomic_identity_down (tree: tree) = match tree.connective with
         | _ -> Some tree
       in tr
   in tr
-| _ -> Some tree
+| _ -> Some tree (*Else traverse deeper into the tree until finished*)
+
 
 (*super switch down - ss_down*)
 (*TODO how do i handle context*)
