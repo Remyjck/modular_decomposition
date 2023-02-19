@@ -41,10 +41,13 @@ let create_context graph modu =
   else None
 
 (*take context and graph and make the new graph boom done*)
+(*
 let apply_context context graph =
   let new_nodes = Set.union graph.nodes context.graph.nodes in
   let basic_edges = Map.merge graph.edges context.graph.edges ~f:(*TODO*) in
   let new_edges = connect_vertices context.connnected graph.nodes (empty_graph ()) in
   let new_edges = Map.merge new_edges.edges basic_edges  in
   {nodes=new_nodes; edges=new_edges}
+   *)
+
 

@@ -134,3 +134,15 @@ let tree_to_graph tree =
   {Graph.nodes = vertices; edges = edges}
 
 let show tree = Graph.show (tree_to_graph tree)
+
+let isDual idg1 idg2 = false
+
+(*
+  Facts:
+
+  A prime graph
+
+
+*)
+
+
