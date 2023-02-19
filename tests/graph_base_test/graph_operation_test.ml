@@ -34,7 +34,7 @@ let%test _ = Graph.VSet.equal (Graph.find_or_empty dummy_graph.edges vertex) nei
 
 let%test _ =
     let graph = Graph.add_vertex vertex graph in
-    let graph = Graph.connect_vertices vset1 vertex graph in
+    let graph = Graph.connect_vertices_to_vertex vset1 vertex graph in
     Set.for_all vset1
       ~f:(fun v ->
         Set.mem (Map.find_exn graph.edges v) vertex)
