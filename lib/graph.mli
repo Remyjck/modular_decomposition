@@ -103,9 +103,12 @@ val find_or_empty :
   'a -> (Vertex.t, Vertex.comparator_witness) Base.Set.t
 val successors : graph -> verticies -> verticies
 val replace : graph -> verticies -> Vertex.t -> state -> graph
-val connect_vertices : verticies -> Vertex.t -> graph -> graph
+
+(** Connects every vertex from a list of verticies in the graph to a given vertex*)
+val connect_vertices_to_vertex : verticies -> Vertex.t -> graph -> graph
+(** Connects every vertex from the first list to every vertex in the second list within the graph*)
+val connect_vertices : verticies -> verticies -> graph -> graph
 val induced_subgraph : graph -> verticies -> graph
-val w : graph -> verticies -> Vertex.t -> verticies
 val edge_tuple_list : edges -> (Vertex.t * Vertex.t) list
 val edge_maps : (Vertex.t * Vertex.t) list -> edges
 val to_graph : Vertex.t list -> (Vertex.t * Vertex.t) list -> graph * state
@@ -114,3 +117,9 @@ val iset_to_vset : (int, Vertex.t, 'a) Base.Map.t -> Util.ISet.t -> verticies
 val vmap_to_imap : edges -> verticies -> Util.IMap.t
 val id_map :
   verticies -> (int, Vertex.t, Base.Int.comparator_witness) Base.Map.t
+val singleton: vertex -> verticies
+
+(*Empty Constructors*)
+val empty_vertex_set: unit -> verticies
+val empty_vertex_map: unit -> edges
+val empty_graph: unit -> graph
