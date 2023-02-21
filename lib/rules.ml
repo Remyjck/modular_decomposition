@@ -24,9 +24,7 @@ let atomic_identity_down (tree: tree) = match tree.connective with
 let super_switch_down tree = tree
 
 (*prime down - p_down*)
-let prime_down tree =
-  match tree.connective with
-  | Par nodes ->
+let prime_down tree = tree
 
 (*Deduction rules*)
 

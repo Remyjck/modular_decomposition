@@ -98,7 +98,7 @@ let from_connective connective =
   | Tree.Par _ -> `String "par", None
   | Tree.Prime (id_graph, _) -> `String "prime", Some id_graph
 
-let from_id_graph (id_graph : Tree.id_graph) =
+let from_id_graph (id_graph : Id_graph.id_graph) =
   let nodes = List.map id_graph.nodes ~f:(fun n -> `Int n) in
   let nodes_json = `List nodes in
   let edges = List.map id_graph.edges

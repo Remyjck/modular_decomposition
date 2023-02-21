@@ -1,9 +1,5 @@
 open Base
-
-type id_graph = {
-    nodes : int list;
-    edges : (int * int) list;
-}
+open Id_graph
 
 type connective =
   | Atom of Graph.atom
@@ -134,15 +130,5 @@ let tree_to_graph tree =
   {Graph.nodes = vertices; edges = edges}
 
 let show tree = Graph.show (tree_to_graph tree)
-
-let isDual idg1 idg2 = false
-
-(*
-  Facts:
-
-  A prime graph
-
-
-*)
 
 
