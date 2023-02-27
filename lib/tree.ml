@@ -91,7 +91,7 @@ let tree_to_graph tree =
       (node, [])
 
     | Par tl ->
-      let nodes, edges = List.fold tl ~init:(Set.empty (module Graph.Vertex), [])
+      let nodes, edges = List.fold tl ~init:(Graph.empty_vertex_set (), [])
         ~f:(fun (vset, el) t ->
           let nodes, el_to_add = tree_to_graph_r t in
           (Set.union vset nodes, el_to_add @ el))
@@ -100,7 +100,7 @@ let tree_to_graph tree =
 
     | Tensor tl ->
       let nel = List.map tl ~f:(tree_to_graph_r) in
-      let nodes, edges = List.fold nel ~init:(Set.empty (module Graph.Vertex), [])
+      let nodes, edges = List.fold nel ~init:(Graph.empty_vertex_set (), [])
         ~f:(fun (vsetacc, elacc) (vset, el) ->
           let vertices = Set.union vsetacc vset in
           let edge_base = el @ elacc in
@@ -109,7 +109,7 @@ let tree_to_graph tree =
       in
       (nodes, edges)
     | Prime (id_graph, tl) ->
-      let vertices, edges, id_map = List.fold tl ~init:(Set.empty (module Graph.Vertex), [], Map.empty (module Int))
+      let vertices, edges, id_map = List.fold tl ~init:(Graph.empty_vertex_set (), [], Map.empty (module Int))
         ~f:(fun (vset, el, map) t ->
           let nodes, edges = tree_to_graph_r t in
           let nmap = Map.add_exn map ~key:t.id ~data:nodes in

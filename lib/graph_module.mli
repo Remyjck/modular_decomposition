@@ -13,7 +13,7 @@ val create_context :
 
   (*
 
-  val apply_context: context -> Graph.graph -> Graph.graph
+  val apply_context: context -> Graph.Graph -> Graph.Graph
      *)
 
 
