@@ -136,7 +136,7 @@ let read_file_as_graphs filepath =
 let parse_idg js_obj : Id_graph.id_graph =
   let nodes = js_obj |> member "nodeCount" |> to_int in
   let edges = js_obj |> member "edges" |> to_id_list in
-  {nodes=List.init ~f:Fn.id nodes; edges}
+  {nodes=List.init ~f:(fun x -> x+1) nodes; edges}
 
 let read_file_as_id_graph filepath =
   let s = Stdio.In_channel.read_all filepath in

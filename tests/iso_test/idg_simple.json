@@ -24,5 +24,13 @@
                 "target": 2
             }
         ]
+    },
+    {
+        "nodeCount": 2,
+        "edges": []
+    },
+    {
+        "nodeCount": 3,
+        "edges": []
     }
 ]
