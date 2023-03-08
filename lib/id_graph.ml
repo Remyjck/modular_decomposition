@@ -3,12 +3,6 @@ open Slap.D
 open Slap.Size
 open Poly
 
-let (>>=) = Option.(>>=)
-
-
-
-
-
 type id_graph = {
     nodes : int list;
     edges : (int * int) list;
@@ -76,6 +70,7 @@ let ullmann_find perm matA matB =
     let lastRow = to_int (Mat.dim1 matA) in
     let lastCol = to_int (Mat.dim1 matB) in
     let rec aux freeVert perm currentRow currentColumn =
+        let perm = refine perm in
         if currentRow = lastRow && isIso perm matA matB then true else
         if currentColumn = lastCol then false else
         if freeVert.(currentColumn) then aux freeVert perm currentRow (currentColumn+1) else
@@ -98,8 +93,23 @@ let is_sub_iso idg1 idg2 =
     let adj2 = adj_mat idg2 Dim2.value in
     ullmann_find m0 adj1 adj2
 
+let is_iso idg1 idg2 = is_sub_iso idg1 idg2 && is_sub_iso idg2 idg1
+
+let (>>=) = List.(>>=)
+
+(*fills out all possible edges of the graph TODO, not very optimal but hey*)
+let completetion_graph g =
+  let {nodes; edges=_} = g in
+  let edges = nodes >>= fun x -> List.filter_map nodes ~f:(fun y -> if x = y then None else Some (x,y)) in
+  {nodes;edges}
+
+let id_graph_complement g =
+    let compl = completetion_graph g in
+    let edges = Util.list_diff compl.edges g.edges in
+    {g with edges}
 
 
+(*is_dual checks whether two graphs are in a dual relationship up to isomorphism*)
+let is_dual g1 g2 = is_iso (id_graph_complement g2) g1
 
-
-
+(*TODO write tests for this*)

@@ -1,7 +1,7 @@
 open Core
 open Base
 
-let path = "./graph.json"
+let path = "./graph_ai.json"
 
 let graph, state = Parsegraph.read_file_as_graph path
 let tr = Caml.Option.get @@ Tree.tree_from_graph graph state

@@ -253,3 +253,5 @@ let id_map (vset: verticies) =
     ~init:(Map.empty (module Int))
     ~f:(fun accum vertex ->
       Map.add_exn accum ~key:vertex.id ~data:vertex)
+
+
