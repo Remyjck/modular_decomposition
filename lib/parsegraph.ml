@@ -122,7 +122,28 @@ let rec serialize_tree (tree : Tree.tree) : Yojson.Basic.t =
     ("successors", `List successors)
   ]
 
-  let read_file_as_graph filepath =
+let read_file_as_graph filepath =
   let s = Stdio.In_channel.read_all filepath in
   let js_obj = Yojson.Basic.from_string s in
   parse js_obj
+
+let read_file_as_graphs filepath =
+  let s = Stdio.In_channel.read_all filepath in
+  let js_obj = Yojson.Basic.from_string s in
+  List.map ~f:parse (to_list js_obj)
+
+
+let parse_idg js_obj : Id_graph.id_graph =
+  let nodes = js_obj |> member "nodeCount" |> to_int in
+  let edges = js_obj |> member "edges" |> to_id_list in
+  {nodes=List.init ~f:Fn.id nodes; edges}
+
+let read_file_as_id_graph filepath =
+  let s = Stdio.In_channel.read_all filepath in
+  let js_obj = Yojson.Basic.from_string s in
+  parse_idg js_obj
+
+let read_file_as_id_graphs filepath =
+  let s = Stdio.In_channel.read_all filepath in
+  let js_obj = Yojson.Basic.from_string s in
+  List.map ~f:parse_idg (to_list js_obj)

@@ -6,7 +6,7 @@ open Poly
 let (>>=) = Option.(>>=)
 
 
-(*NOTE the Slap library creates matricies that are 1 indexed*)
+
 
 
 type id_graph = {
@@ -29,6 +29,7 @@ let length_edges idg =
     List.length edges
 
 (*We are passing the dimension since we need to keep the scope outside this function*)
+(*NOTE the Slap library creates matricies that are 1 indexed, this means that we want to avoid indexing at all costs*)
 let adj_mat idg dim=
     let {nodes; edges=_} = idg in
     let nodes = List.to_array nodes in
@@ -37,11 +38,14 @@ let adj_mat idg dim=
         if isEdge (nodes.(i-1), nodes.(j-1)) idg then 1.0 else 0.0) in
     m
 
+let mul a b = gemm  ~transa:( Slap.Common.normal) a ~transb:( Slap.Common.normal) b
+
+let mulT a b = gemm  ~transa:( Slap.Common.normal) a ~transb:( Slap.Common.trans) b
+
 let degrees idg dim =
     let m = adj_mat idg dim in
     let v = Mat.fold_top (fun acc vec -> Vec.add acc vec) (Vec.make0 dim) m in
     Vec.to_array v
-
 
 let genInitialPerm idg1 idg2 dim1 dim2 =
     let degArr1 = degrees idg1 dim1 in
@@ -54,76 +58,46 @@ let setImmut a i v =
     cpy
 
 
-
-let no1setinrow perm depth =
-    let row = Mat.row_dyn perm (depth + 1) in
-    List.find (Vec.to_list row) ~f:(fun v -> v = 1.0) = None
-
-let onlysetchosen perm depth chosen =
-    Mat.mapi (
-        fun i j v -> match i, j with
-        | i,j when i - 1 = depth && j - 1 = chosen -> v
-        | i,_ when i - 1 = depth -> 0.0
-        | _ -> v
-    ) perm
+(*TODO test (<=) *)
+let isIso perm matA matB =
+    matA <= mulT perm (mul perm matB)
 
 
+(*TODO implement prune*)
 let refine perm = perm
-let anyrow0 perm needle=
-    let rec aux = function
-    | index when index = needle -> false
-    | index -> if no1setinrow perm index then true else aux (index + 1) in
-    aux 1
 
-(*needle * haystack matrix*)
-let ullmann_enumeration perm haystack needle=
+(*PSEUDOCODE
+https://adriann.github.io/Ullman%20subgraph%20isomorphism.html
+*)
 
-    let rec find_at_depth depth perm freeVert results=
-        let _ = pp_mat Caml.Format.std_formatter perm in
-        if no1setinrow perm depth
-            then
-                results
-        else
-            let rec aux res = function
-            | chosen when (haystack - 1) = chosen || (not freeVert.(chosen) || Mat.get_dyn perm (depth + 1) (chosen + 1) = 0.0) -> res
-            | chosen ->
-                let perm = onlysetchosen perm depth chosen in
-                let perm = refine perm in
-                let res =
-                    if anyrow0 perm needle
-                        then res
-                    else
-                        if depth = needle - 1
-                            then perm::res
-                        else
-                            let freeVert = setImmut freeVert chosen false in
-                            find_at_depth (depth+1) perm freeVert res in
-                aux res (chosen + 1) in
-            aux results 0 in
-    find_at_depth 0 perm (Array.create ~len:haystack true) []
-
-let print n = let _ = Caml.print_int n in Caml.print_newline ()
+(*Finds some isomorphism between matA and matB returns a bool on success*)
+(*nodes(A) * nodes(B) matrix is perm*)
+let ullmann_find perm matA matB =
+    let lastRow = to_int (Mat.dim1 matA) in
+    let lastCol = to_int (Mat.dim1 matB) in
+    let rec aux freeVert perm currentRow currentColumn =
+        if currentRow = lastRow && isIso perm matA matB then true else
+        if currentColumn = lastCol then false else
+        if freeVert.(currentColumn) then aux freeVert perm currentRow (currentColumn+1) else
+        (*We are now in the for loop*)
+        (*Mark c as used*)
+        let freeVert = setImmut freeVert currentColumn true in
+        aux freeVert perm (currentRow+1) currentColumn in
+    aux (Array.create ~len:lastCol false) perm 0 0
 
 let is_sub_iso idg1 idg2 =
     let l1 = length idg1 in
     let l2 = length idg2 in
     if l1 = 0 then true else (*We want empty graphs to be trivial subgraphs*)
-    if l1 <= l2 then
-        let _ = print (length_edges idg1) in
-        let _ = print l1 in
-        if length_edges idg1 = 0 then true
-        else
-            let module Dim1 = (val of_int_dyn l1 : SIZE) in
-            let module Dim2 = (val of_int_dyn l2 : SIZE) in
-            let m0 = genInitialPerm idg1 idg2 Dim1.value Dim2.value in
-            let res = ullmann_enumeration m0 l1 l2 in
-            (*DEBUG*)
-            let _ = print (List.length res) in
-            let _ = match (List.hd res) with
-            | Some v -> pp_mat Caml.Format.std_formatter v
-            | _ -> () in
-            not @@ List.is_empty res
-    else false
+    if l1 > l2 then false else
+    if length_edges idg1 = 0 then true else
+    let module Dim1 = (val of_int_dyn l1 : SIZE) in
+    let module Dim2 = (val of_int_dyn l2 : SIZE) in
+    let m0 = genInitialPerm idg1 idg2 Dim1.value Dim2.value in
+    let adj1 = adj_mat idg1 Dim1.value in
+    let adj2 = adj_mat idg2 Dim2.value in
+    ullmann_find m0 adj1 adj2
+
 
 
 
