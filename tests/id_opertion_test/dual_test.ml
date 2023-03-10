@@ -10,7 +10,6 @@ let e4, k4, h, g = match gs with
 | e4::k4::h::g::_ -> e4,k4,g,h
 | _ -> raise (READERROR "Could not find valid graph")
 
-
 let%test "is_dual_e4_k4" = is_dual e4 k4
 let%test "is_dual_k4_e4" = is_dual k4 e4
 let%test "is_dual_h_g" = is_dual h g

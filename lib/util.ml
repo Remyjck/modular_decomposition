@@ -8,7 +8,6 @@ let complement_map set map =
   Map.filter_keys map ~f:(fun ele -> Set.mem set ele |> not)
   |> Map.map ~f:(Fn.flip Set.diff set)
 
-let list_diff l1 l2 = List.filter l1 ~f:(fun x -> not (List.mem l2 x ~equal:Poly.(=)))
 
 let intersect_map set map =
   Map.filter_keys map ~f:(Set.mem set)

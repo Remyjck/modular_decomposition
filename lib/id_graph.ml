@@ -93,7 +93,7 @@ let is_sub_iso idg1 idg2 =
     let adj2 = adj_mat idg2 Dim2.value in
     ullmann_find m0 adj1 adj2
 
-let is_iso idg1 idg2 = is_sub_iso idg1 idg2 && is_sub_iso idg2 idg1
+let is_iso idg1 idg2 = (is_sub_iso idg1 idg2) && (is_sub_iso idg2 idg1)
 
 let (>>=) = List.(>>=)
 
@@ -103,9 +103,15 @@ let completetion_graph g =
   let edges = nodes >>= fun x -> List.filter_map nodes ~f:(fun y -> if x = y then None else Some (x,y)) in
   {nodes;edges}
 
+
+let edge_diff idg1 idg2 =
+    let {nodes=_; edges=e1} = idg1 in
+    let {nodes=_; edges=e2} = idg2 in
+    List.filter e1 ~f:(fun x -> not (List.mem e2 x ~equal:(fun (a,b) (c,d) -> (a = c && b = d)  || (a = d && b = c))))
+
 let id_graph_complement g =
     let compl = completetion_graph g in
-    let edges = Util.list_diff compl.edges g.edges in
+    let edges = edge_diff compl g in
     {g with edges}
 
 
