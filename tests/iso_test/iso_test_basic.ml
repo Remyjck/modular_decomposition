@@ -23,12 +23,12 @@ let%test "iso_reflexive_e3" = is_sub_iso e3 e3
 let%test "iso_reflexive_e2" = is_sub_iso e2 e2
 let%test "iso_sg_k2_k3" = is_sub_iso k2 k3
 let%test "iso_sg_e2_k3" = is_sub_iso e2 k3
-let%test "iso_sg_e2_k2" = is_sub_iso e2 k2 (*Fails*)
+let%test "iso_sg_e2_k2" = is_sub_iso e2 k2
 let%test "iso_sg_e3_k3" = is_sub_iso e3 k3
-let%test "iso_sg_e2_e3" = is_sub_iso e2 e3 (*Fails*)
+let%test "iso_sg_e2_e3" = is_sub_iso e2 e3
 let%test "not_iso_sg_k3_k2" = not (is_sub_iso k3 k2)
-let%test "not_iso_sg_e3_k2" = not (is_sub_iso e3 k2) (*Fails*)
+let%test "not_iso_sg_e3_k2" = not (is_sub_iso e3 k2)
 let%test "not_iso_sg_k2_e2" = not (is_sub_iso k2 e2)
 let%test "not_iso_sg_k3_e3" = not (is_sub_iso k3 e3)
-let%test "not_iso_sg_e3_e2" = not (is_sub_iso e3 e2) (*Fails*)
+let%test "not_iso_sg_e3_e2" = not (is_sub_iso e3 e2)
 
