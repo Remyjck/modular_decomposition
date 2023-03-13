@@ -16,7 +16,5 @@ let expected, initial, stateExp, stateInit = match graphs with
 let expTree = Caml.Option.get @@ Tree.tree_from_graph expected stateExp
 let initTree = Caml.Option.get @@ Tree.tree_from_graph initial stateInit
 
-
-
-
 let%test "Ex4.16_prime_down_only" =  (Rules.prime_down initTree) =. expTree
+let%test "Ex4.16_is_valid" = Tree.is_empty (Rules.atomic_identity_down (Rules.prime_down initTree))
