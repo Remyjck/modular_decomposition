@@ -90,6 +90,18 @@ let serialize_graph graph =
     ("edges", edges)
   ]
 
+let serialize_id_graph (id_graph:Id_graph.id_graph) =
+  let nodesMapping = List.mapi id_graph.nodes ~f:(fun i v -> (v,i+1)) in (*use hashmaps instead later TODO*)
+  let reindexedEdges = List.map id_graph.edges ~f:(fun (s,t) ->
+     snd @@ Caml.Option.get @@ List.find nodesMapping ~f:(fun (v,_) -> v=s),
+     snd @@ Caml.Option.get @@ List.find nodesMapping ~f:(fun (v,_) -> v=t)
+  ) in
+  let nodeCount = `Int (List.length nodesMapping) in
+  let edges = `List (List.map reindexedEdges ~f:from_id_tuple) in
+  `Assoc [
+    ("nodeCount", nodeCount);
+    ("edges", edges)
+  ]
 
 let from_connective connective =
   match connective with
@@ -147,3 +159,14 @@ let read_file_as_id_graphs filepath =
   let s = Stdio.In_channel.read_all filepath in
   let js_obj = Yojson.Basic.from_string s in
   List.map ~f:parse_idg (to_list js_obj)
+
+let clean_file_path filepath = (Caml.Filename.concat (Caml.Filename.dirname filepath) (Caml.Filename.basename filepath) )
+
+let write_tree tree filepath = Yojson.Basic.to_file (clean_file_path filepath) (serialize_tree tree)
+
+let write_graph graph filepath = Yojson.Basic.to_file (clean_file_path filepath) (serialize_graph graph)
+
+(*Id_graphs are autoreindexed to be 1-indexed*)
+let write_id_graph id_graph filepath = Yojson.Basic.to_file (clean_file_path filepath) (serialize_id_graph id_graph)
+
+(*TODO implement parseTree*)

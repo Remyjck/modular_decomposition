@@ -1,6 +1,8 @@
 open Base
 open Id_graph
 
+let (=) = Poly.(=)
+
 type connective =
   | Atom of Graph.atom
   | Tensor of tree list
@@ -132,3 +134,18 @@ let tree_to_graph tree =
 let show tree = Graph.show (tree_to_graph tree)
 
 
+let is_dual_atom (a:Graph.atom) (b:Graph.atom) = a.pol = not b.pol && a.label = b.label
+
+let rec is_dual t1 t2 = match t1.connective, t2.connective with
+| Prime (idg1, sub1), Prime (idg2, sub2) -> (Id_graph.is_dual idg1 idg2) && Caml.List.for_all2 is_dual sub1 sub2 (*very suboptimal and also bad*)
+| Atom a, Atom b -> is_dual_atom a b
+| Tensor sub1, Tensor sub2 -> Caml.List.for_all2 is_dual sub1 sub2
+| Par sub1, Par sub2 -> Caml.List.for_all2 is_dual sub1 sub2
+| _ -> false
+
+let rec struct_equal t1 t2 = match t1.connective, t2.connective with
+| Prime (idg1, sub1), Prime (idg2, sub2) -> (Id_graph.is_iso idg1 idg2) && Caml.List.for_all2 struct_equal sub1 sub2 (*very suboptimal and also bad*)
+| Atom a, Atom b -> a = b
+| Tensor sub1, Tensor sub2 -> Caml.List.for_all2 struct_equal sub1 sub2
+| Par sub1, Par sub2 -> Caml.List.for_all2 struct_equal sub1 sub2
+| _ -> false
