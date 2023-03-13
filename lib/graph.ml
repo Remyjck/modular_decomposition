@@ -1,6 +1,8 @@
 open Base
 open Util
 
+let (=) = Poly.(=)
+
 type atom = {
     label : string;
     pol : bool;
@@ -254,4 +256,4 @@ let id_map (vset: verticies) =
     ~f:(fun accum vertex ->
       Map.add_exn accum ~key:vertex.id ~data:vertex)
 
-
+let is_dual_atom (a:atom) (b:atom) = a.pol = not b.pol && a.label = b.label
