@@ -36,9 +36,15 @@ let rec atomic_identity_down (tree: tree) = match tree.connective with
 | _ -> propagate_once atomic_identity_down tree
 
 
-(*super switch down - ss_down*)
-(*TODO how do i handle context*)
-let super_switch_down tree = tree
+(*Switch par implementation*)
+(*P(M1,...,Mn) & N -> P(M1,...,Mi & N,...,Mn) *)
+(*f selects an element from the subnodes*)
+let switch_par f tree = f tree
+(*
+   Plan: check if top node is Par,
+    Check if there is a pair of one Non prime tree and one prime tree
+    Use f to move N to one of the nodes in P.
+*)
 
 (*prime down - p_down*)
 
