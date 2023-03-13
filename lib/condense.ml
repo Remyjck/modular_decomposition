@@ -28,7 +28,7 @@ let smallest_condensible graph vset =
     let new_to_add = Set.fold new_res
       ~init:(Set.empty (module Vertex))
       ~f:(fun acum v ->
-        let wgi = w graph new_res v in
+        let wgi = keep_links graph new_res v in
         Set.union acum (Set.diff new_connected wgi))
     in
     add_to_set new_res new_to_add

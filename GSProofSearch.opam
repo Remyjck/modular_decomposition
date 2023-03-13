@@ -8,6 +8,7 @@ depends: [
   "ppx_inline_test" {>= "4.13"}
   "ppx_jane" {>= "4.13"}
   "ppx_assert" {>= "0.15.0"}
+  "slap" {>= "4.1.1"}
   "odoc" {with-doc}
 ]
 build: [

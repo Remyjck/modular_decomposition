@@ -16,6 +16,13 @@ let intersect_map set map =
 let remove_id id map =
   Map.remove map id |> Map.map ~f:(fun v -> Set.remove v id)
 
+let find_fitting_pair lst comp =
+  let rec aux rem1 rem2 = match rem1, rem2 with
+    | [],_ -> None
+    | _::t1, [] -> aux t1 lst
+    | h1::_ as l, h2::t2 -> if comp h1 h2 then Some (h1,h2) else aux l t2 in
+    aux lst lst
+
 module ISet = struct
   type t = Base.Set.M(Int).t [@@deriving compare, sexp, hash]
 end

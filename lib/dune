@@ -2,4 +2,4 @@
  (name core)
  (preprocess
   (pps ppx_jane))
- (libraries yojson base))
+ (libraries yojson base slap))

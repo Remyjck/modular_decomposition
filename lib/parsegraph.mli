@@ -32,3 +32,11 @@ val serialize_graph :
        list ]
 val serialize_tree : Tree.tree -> Yojson.Basic.t
 val read_file_as_graph : string -> Graph.graph * Graph.state
+val read_file_as_graphs : string -> (Graph.graph * Graph.state) list
+val read_file_as_id_graph: string -> Id_graph.id_graph
+val read_file_as_id_graphs: string -> Id_graph.id_graph list
+(*Id_graphs are autoreindexed to be 1-indexed*)
+
+val write_graph: Graph.graph -> string -> unit
+val write_tree: Tree.tree -> string -> unit
+val write_id_graph: Id_graph.id_graph -> string -> unit

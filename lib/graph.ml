@@ -1,6 +1,8 @@
 open Base
 open Util
 
+let (=) = Poly.(=)
+
 type atom = {
     label : string;
     pol : bool;
@@ -60,10 +62,17 @@ end
 type verticies = VSet.t
 type edges = VMap.t
 
+
+
 type graph = {
     nodes : verticies;
     edges : edges;
   }
+
+let empty_vertex_set (): verticies = Set.empty (module Vertex)
+let empty_vertex_map (): edges = Map.empty (module Vertex)
+
+let empty_graph () = {nodes=empty_vertex_set (); edges=empty_vertex_map () }
 
 let show graph =
   let () = Stdio.printf "Nodes: "; Set.iter graph.nodes ~f:(fun v -> Stdio.printf "%s " (getLabel v)); Stdio.printf "\n"; in
@@ -77,6 +86,8 @@ type state = {
   id_map : (int, Vertex.t) Hashtbl.t;
 }
 
+let singleton v : verticies= Set.singleton (module Vertex) v
+
 let fresh_id state =
   state.total_vertices <- state.total_vertices + 1;
   state.total_vertices
@@ -85,8 +96,6 @@ let add_vertices_to_hash (vertices:verticies) state =
   Set.iter vertices
   ~f:(fun v -> Hashtbl.add_exn state.id_map ~key:v.id ~data:v)
 
-(** [add_vertex vertex graph]: remove [vertex] from [graph] in both the nodes
-    and edges *)
 let add_vertex vertex graph =
     {nodes = Set.add graph.nodes vertex; edges = graph.edges}
 
@@ -107,18 +116,18 @@ let graph_difference graph (vertices: verticies) =
 
 let find_or_empty map v =
   match Map.find map v with
-  | None -> Set.empty (module Vertex)
+  | None -> empty_vertex_set ()
   | Some vset -> vset
 
 (** [successors graph vertices]: set of vertices to which [vertices] is
     connected *)
 let successors graph (vertices: verticies) : verticies =
     Set.fold vertices
-      ~init:(Set.empty (module Vertex))
+      ~init:(empty_vertex_set ())
       ~f:(fun accum v ->
         let to_add =
           match Map.find graph.edges v with
-          | None -> Set.empty (module Vertex)
+          | None -> empty_vertex_set ()
           | Some vset -> vset
         in
         Set.union accum to_add)
@@ -136,19 +145,19 @@ let replace graph (h: verticies) vertex state =
   in
   let new_edges = Set.fold new_successors ~init:new_edges ~f:(fun accum v ->
     Map.update accum v ~f:(function
-      | None -> Set.singleton (module Vertex) vertex
+      | None -> singleton vertex
       | Some vset -> Set.add vset vertex))
   in
   {nodes = new_nodes; edges = new_edges}
 
 (** [connect_vertices vertices vertex graph]: for a given [graph],
     add edges connecting every element of [vertices] to [vertex] *)
-let connect_vertices (vertices:verticies) vertex graph =
+let connect_vertices_to_vertex (vertices:verticies) vertex graph =
   let () = assert(Set.mem graph.nodes vertex) in
   let () = assert(Set.for_all vertices ~f:(Set.mem graph.nodes)) in
   let edges = Set.fold vertices ~init:graph.edges ~f:(fun accum v ->
     Map.update accum v ~f:(function
-    | None -> Set.singleton (module Vertex) vertex
+    | None -> singleton vertex
     | Some vset -> Set.add vset vertex))
   in
     let edges = Map.update edges vertex ~f:(function
@@ -157,19 +166,18 @@ let connect_vertices (vertices:verticies) vertex graph =
   in
   {nodes=graph.nodes; edges=edges}
 
+let connect_vertices v1 v2 g =
+  let rec aux rem acc = match Set.find rem ~f:(fun _ -> true) with
+  | None -> acc
+  | Some v -> aux (Set.remove rem v) (connect_vertices_to_vertex v2 v acc) in
+  aux v1 g
+
+
 (** [induced_subgraph graph vertices]: subgraph of [graph] that contains only
     the vertices in [vertices]  *)
 let induced_subgraph graph (vertices: verticies) =
   let edges = intersect_map vertices graph.edges in
   {nodes = vertices; edges = edges}
-
-(*TODO rename this*)
-(** [w G H h]: set of vertices of [graph_difference G H] to which [h] is connected *)
-let w g (h:verticies) v : verticies =
-  let new_h = Set.remove h v in
-  match Map.find (graph_difference g new_h).edges v with
-  | None -> Set.empty (module Vertex)
-  | Some vset -> vset
 
 (** [edge_tuple_list edges]: given a mapping [edges],
     return a corresponding list of edges  *)
@@ -188,7 +196,7 @@ let rec edge_tuple_list (edge_map: edges) =
 
 let add_or_init y (v:verticies option): verticies option=
   match v with
-  | None -> Some (Set.singleton (module Vertex) y)
+  | None -> Some (singleton y)
   | Some z -> Some (Set.add z y)
 
 (** [edge_map ~reverse edge_tuple_list]: given a list of edges [edge_tuple_list],
@@ -206,7 +214,7 @@ let edge_map ~reverse edge_tuple_list : edges =
       in
       edge_list_to_map t new_map
   in
-  edge_list_to_map edge_tuple_list (Map.empty (module Vertex))
+  edge_list_to_map edge_tuple_list (empty_vertex_map ())
 
 let edge_maps edge_list : edges =
       Map.merge_skewed (edge_map ~reverse:false edge_list) (edge_map ~reverse:true edge_list)
@@ -214,7 +222,7 @@ let edge_maps edge_list : edges =
 
 let to_graph vertex_list edge_list =
   let vertices, max_id = List.fold vertex_list
-    ~init:(Set.empty (module Vertex), 0)
+    ~init:(empty_vertex_set (), 0)
     ~f:(fun (acum, max) v ->
       (Set.add acum v), (Int.max max v.id))
   in
@@ -247,3 +255,5 @@ let id_map (vset: verticies) =
     ~init:(Map.empty (module Int))
     ~f:(fun accum vertex ->
       Map.add_exn accum ~key:vertex.id ~data:vertex)
+
+let is_dual_atom (a:atom) (b:atom) = a.pol = not b.pol && a.label = b.label
