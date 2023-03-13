@@ -10,10 +10,13 @@
 (*For now we will model empty trees as an none option*)
 
 (*atomic identity down - ai_down*)
-val atomic_identity_down: Tree.tree -> Tree.tree option
+val atomic_identity_down : Tree.tree -> Tree.tree
 
 (*super switch down - ss_down*)
 val super_switch_down: Tree.tree -> Tree.tree
 
 (*prime down - p_down*)
 val prime_down: Tree.tree -> Tree.tree
+
+val is_valid: Tree.tree -> bool
+val find_proof: Tree.tree -> string list
