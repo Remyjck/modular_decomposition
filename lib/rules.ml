@@ -24,7 +24,17 @@ let atomic_identity_down (tree: tree) = match tree.connective with
 let super_switch_down tree = tree
 
 (*prime down - p_down*)
-let prime_down (tree: tree) = tree
+
+
+
+(*dumb version for now TODO test this*)
+let prime_down (tree: tree) = match tree.connective with
+| Par (a::b::[]) -> if is_dual a b then match a.connective, b.connective with
+  | Prime (_, sub1), Prime (_, sub2) -> {tree with connective = Tensor (List.map2 (fun t1 t2 -> {id=t1.id + t2.id + 1;connective= Par [t1;t2] } ) sub1 sub2)}
+  | _ -> tree
+   else tree
+| _ -> tree
+
 
 (*Deduction rules*)
 
