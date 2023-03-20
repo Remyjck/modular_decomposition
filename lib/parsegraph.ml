@@ -43,7 +43,7 @@ let parse js_obj =
     | Some n -> n
   in
   ({nodes=nodes; edges=edges},
-   {total_vertices = max_id; id_map = Hashtbl.create (module Int)})
+   new_state max_id)
 
 let from_vertex vertex =
   let id = `Int vertex.id in

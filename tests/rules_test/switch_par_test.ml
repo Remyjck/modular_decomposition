@@ -1,13 +1,13 @@
+(*Try to prove example 4.8 in GS, page 13*)
 open Core
 exception READERROR of string
 
 let (=.) = Tree.struct_equal
 
 (*2 values in each file, expected and start*)
-let path = "./graph_p1_suite.json"
+let path = "./graph_sp_suite.json"
 
 let graphs = Parsegraph.read_file_as_graphs path
-(*Graph from example 4.16 in "An analytic proof system on graphs"*)
 
 let expected, initial, stateExp, stateInit = match graphs with
 | (expected,stateExp)::(initial,stateInit)::[] -> expected, initial, stateExp, stateInit
@@ -16,5 +16,6 @@ let expected, initial, stateExp, stateInit = match graphs with
 let expTree = Caml.Option.get @@ Tree.tree_from_graph expected stateExp
 let initTree = Caml.Option.get @@ Tree.tree_from_graph initial stateInit
 
-let%test "Ex4.16_prime_down_only" =  (Rules.prime_down initTree) =. expTree
-let%test "Ex4.16_is_valid" = Tree.is_empty (Rules.atomic_identity_down (Rules.prime_down initTree))
+let () = Tree.show (Rules.switch_par_atom_first initTree)
+
+let%test "Note6.3_s_par_only" =  (Rules.switch_par_atom_first initTree) =. expTree

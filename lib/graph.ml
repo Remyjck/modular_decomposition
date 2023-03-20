@@ -88,6 +88,9 @@ type state = {
 
 let singleton v : verticies= Set.singleton (module Vertex) v
 
+let new_state total_vertices =
+  {total_vertices; id_map = Hashtbl.create (module Int)}
+
 let fresh_id state =
   state.total_vertices <- state.total_vertices + 1;
   state.total_vertices

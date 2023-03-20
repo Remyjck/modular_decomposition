@@ -168,4 +168,13 @@ let rec is_empty tree = match tree.connective with
 | Par [] -> true
 | Par sub -> Caml.List.for_all is_empty sub
 
-let simplify tree = tree_from_graph (tree_to_graph tree) (*drop empty nodes, drop singleton nodes and propagate up, etc*)
+let simplify tree =
+  let gr = tree_to_graph tree in(*drop empty nodes, drop singleton nodes and propagate up, etc*)
+  let max_id =
+    let ids = List.map (Set.elements gr.nodes) ~f:(fun v -> v.id) in
+    match List.max_elt ids ~compare:Int.compare with
+    | None -> 0
+    | Some n -> n
+  in
+  let s = Graph.new_state max_id in
+  tree_from_graph gr s

@@ -95,6 +95,7 @@ type state = {
   id_map : (int, vertex) Base.Hashtbl.t;
 }
 val fresh_id : state -> int
+val new_state : int -> state
 val add_vertices_to_hash : verticies -> state -> unit
 val add_vertex : Vertex.t -> graph -> graph
 val graph_difference : graph -> verticies -> graph
