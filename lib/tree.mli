@@ -13,4 +13,4 @@ val show : tree -> unit
 val is_dual: tree -> tree -> bool
 val struct_equal: tree -> tree -> bool
 val is_empty: tree -> bool
-val simplify: tree -> tree
+val simplify: tree -> Graph.state -> tree option

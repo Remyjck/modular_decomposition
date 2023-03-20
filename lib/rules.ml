@@ -39,7 +39,8 @@ let rec atomic_identity_down (tree: tree) = match tree.connective with
 (*Switch par implementation*)
 (*P(M1,...,Mn) & N -> P(M1,...,Mi & N,...,Mn) *)
 (*f selects an element from the subnodes*)
-let switch_par f tree = f tree
+
+let switch_par (select:tree -> tree) tree = select tree
 (*
    Plan: check if top node is Par,
     Check if there is a pair of one Non prime tree and one prime tree

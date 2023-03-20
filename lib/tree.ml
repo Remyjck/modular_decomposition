@@ -168,4 +168,4 @@ let rec is_empty tree = match tree.connective with
 | Par [] -> true
 | Par sub -> Caml.List.for_all is_empty sub
 
-let simplify tree = tree (*drop empty nodes, drop singleton nodes and propagate up, etc*)
+let simplify tree = tree_from_graph (tree_to_graph tree) (*drop empty nodes, drop singleton nodes and propagate up, etc*)

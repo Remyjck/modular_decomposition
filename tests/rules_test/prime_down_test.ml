@@ -18,3 +18,11 @@ let initTree = Caml.Option.get @@ Tree.tree_from_graph initial stateInit
 
 let%test "Ex4.16_prime_down_only" =  (Rules.prime_down initTree) =. expTree
 let%test "Ex4.16_is_valid" = Tree.is_empty (Rules.atomic_identity_down (Rules.prime_down initTree))
+
+let%test "thingy" =
+  let t = Tree.simplify ((Rules.prime_down initTree)) in
+  match t with
+  | None -> false
+  | Some t -> let () = Tree.show t in true
+
+(*TODO remove state this is so annoying*)
