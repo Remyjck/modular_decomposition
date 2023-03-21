@@ -1,6 +1,7 @@
 open Tree
 open Base
 
+let (=) = Poly.(=)
 
 (*Work on tree nodes*)
 
@@ -11,12 +12,10 @@ let is_atom tree = match tree.connective with
 | _ -> false
 
 
-let find_prime_non_prime trees = Util.find_fitting_pair trees (fun t1 t2 ->
-    match t1.connective, t2.connective with
-    | Prime _, Prime _ -> false (*TODO add dual check here or run prime down*)
-    | Prime _, _ -> true
-    | _ -> false
-  )
+let is_prime tree = match tree.connective with
+| Prime _ -> true
+| _ -> false
+
 
 let find_dual_pair trees = Util.find_fitting_pair trees is_dual
 
@@ -55,33 +54,49 @@ let rec atomic_identity_down (tree: tree) = match tree.connective with
 (*NOTE there are TWO selection that need to happen, which node to move into the context and where to!*)
 (*TODO*)
 
-let switch_par (select: (tree list) -> int) tree = match tree.connective with
+let switch_par_generic (select_node_in_prime: tree list -> int) (select_first_prime: tree list -> int) (select_corresponding: tree list -> int) tree = match tree.connective with
 | Par sub ->
-  let pair_option = find_prime_non_prime sub in
-  (match pair_option with
-  | None -> tree
-  | Some (t1, t2) ->
-     let new_node = match t1.connective with
-        | (Prime (idg, trees) ) ->
-          let index = select trees in
-          Prime (idg, (Caml.List.mapi (fun i t ->
-            if i = index then
-              {id=t1.id; connective= Par [t;t2]}
-            else
-              t
-          ) trees))
-        | _ -> Par sub in
-    {connective=new_node; id=tree.id+1})
+  let primes, corresponding = List.partition_tf sub ~f:is_prime in
+  if primes = [] then tree
+  else
+    let corr_index = select_corresponding corresponding in
+    let prime_index = select_first_prime primes in
+    let prime = List.nth_exn primes prime_index in
+    let corr =  List.nth_exn corresponding corr_index in
+    let new_node = match prime.connective with
+    | Prime (idg, sub_graphs) ->
+      let chosen_node_index = select_node_in_prime sub_graphs in
+      let chosen = List.nth_exn sub_graphs chosen_node_index in
+      let chosen_par = {id=chosen.id*2+500; connective=Par[chosen; corr]} in (*TODO +500 because the tree implementation requires distinct ids*)
+      let new_nodes = List.mapi sub_graphs ~f:(fun i t -> if i = chosen_node_index then chosen_par else t) in
+      {id=prime.id*2; connective=Prime (idg, new_nodes)}
+    | _ -> tree in
+    let new_primes = List.filteri primes ~f:(fun i _ -> i <> prime_index) in
+    let new_corr = List.filteri corresponding ~f:(fun i _ -> i <> corr_index) in
+    let new_sub = new_node :: List.append new_primes new_corr in
+    {id=tree.id*2; connective=Par new_sub}
   | _ -> tree
 
-let switch_par_stupid = switch_par (fun _ -> 0)
+let pick_largest =
+  let rec aux max max_index index = function
+  | [] -> max_index
+  | t::rest ->
+    let new_val = match t.connective with
+    | Prime (idg, _) -> Id_graph.length idg
+    | _ -> max in
+    let max_index, max = if max < new_val then index, new_val else max_index, max in
+    aux max max_index (index+1) rest in
+  aux 0 0 0
 
-let switch_par_atom_first = switch_par (fun trees ->
-  let first_opt = List.findi trees ~f:(fun _ t -> is_atom t) in
-  match first_opt with
+let pick_first _ = 0
+
+let pick_first_atom_or_first trees =
+  let opt = List.findi trees ~f:(fun _ t -> is_atom t) in
+  match opt with
   | None -> 0
-  | Some (i,_) -> i
-  )
+  | Some (i, _) -> i
+
+let switch_par = switch_par_generic pick_first pick_largest pick_first_atom_or_first
 
 (*prime down - p_down*)
 

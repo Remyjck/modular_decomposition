@@ -124,4 +124,6 @@ val singleton: vertex -> verticies
 val empty_vertex_set: unit -> verticies
 val empty_vertex_map: unit -> edges
 val empty_graph: unit -> graph
+
+
 val is_dual_atom: atom -> atom -> bool

@@ -13,10 +13,7 @@
 val atomic_identity_down : Tree.tree -> Tree.tree
 
 (*switch_par - s&*)
-val switch_par: (Tree.tree list -> int) -> Tree.tree -> Tree.tree
-
-val switch_par_stupid: Tree.tree -> Tree.tree
-val switch_par_atom_first: Tree.tree -> Tree.tree
+val switch_par: Tree.tree -> Tree.tree
 
 (*prime down - p_down*)
 val prime_down: Tree.tree -> Tree.tree
