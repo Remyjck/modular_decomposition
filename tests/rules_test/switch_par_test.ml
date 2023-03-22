@@ -16,6 +16,8 @@ let expected, initial, stateExp, stateInit = match graphs with
 let expTree = Caml.Option.get @@ Tree.tree_from_graph expected stateExp
 let initTree = Caml.Option.get @@ Tree.tree_from_graph initial stateInit
 
-let () = Tree.show (Rules.switch_par initTree)
+
+let () = Pp_new.show_tree expTree
+let () = Pp_new.show_tree (Rules.switch_par initTree)
 
 let%test "Note6.3_s_par_only" =  (Rules.switch_par initTree) =. expTree

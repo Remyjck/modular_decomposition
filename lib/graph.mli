@@ -89,7 +89,6 @@ module VMap : sig type t = VSet.t Base.Map.M(Vertex).t end
 type verticies = VSet.t
 type edges = VMap.t
 type graph = { nodes : verticies; edges : edges; }
-val show : graph -> unit
 type state = {
   mutable total_vertices : int;
   id_map : (int, vertex) Base.Hashtbl.t;

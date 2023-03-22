@@ -168,5 +168,3 @@ let write_graph graph filepath = Yojson.Basic.to_file (clean_file_path filepath)
 
 (*Id_graphs are autoreindexed to be 1-indexed*)
 let write_id_graph id_graph filepath = Yojson.Basic.to_file (clean_file_path filepath) (serialize_id_graph id_graph)
-
-(*TODO implement parseTree*)

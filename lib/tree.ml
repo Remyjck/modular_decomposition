@@ -131,11 +131,6 @@ let tree_to_graph tree =
   let edges = Graph.edge_maps edges in
   {Graph.nodes = vertices; edges = edges}
 
-let show tree = Graph.show (tree_to_graph tree)
-
-
-
-
 let rec is_dual t1 t2 = match t1.connective, t2.connective with
 | Prime (idg1, sub1), Prime (idg2, sub2) -> (Id_graph.is_dual idg1 idg2) && Caml.List.for_all2 is_dual sub1 sub2 (*very suboptimal and also bad*)
 | Atom a, Atom b -> Graph.is_dual_atom a b
