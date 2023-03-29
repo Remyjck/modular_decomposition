@@ -1,5 +1,5 @@
 (*Try to prove example 4.8 in GS, page 13*)
-open Core
+open Gscore
 exception READERROR of string
 
 let (=.) = Tree.struct_equal
@@ -14,10 +14,9 @@ let expected, initial, stateExp, stateInit = match graphs with
 | _ -> raise (READERROR "Could not find valid graph")
 
 let expTree = Option.get (Option.bind (Tree.tree_from_graph expected stateExp) Tree.simplify)
-let initTree = Option.get (Option.bind (Tree.tree_from_graph initial stateInit) (fun x -> Tree.simplify (Rules.switch_par x)))
+let initTree = Option.get (Option.bind (Tree.tree_from_graph initial stateInit) Tree.simplify)
 
 
-let () = Pp_new.show_tree expTree
-let () = Pp_new.show_tree (Rules.switch_par initTree)
+let () = Pp_new.show_tree (Rules.switch_par  initTree)
 
 let%test "Note6.3_s_par_only" =  (Rules.switch_par initTree) =. expTree

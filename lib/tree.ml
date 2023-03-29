@@ -82,7 +82,7 @@ let tree_from_graph graph state = tree_from_condensed (Condense.process graph st
 let tree_to_graph tree =
   let join_sets vs1 vs2 =
     Set.fold vs1 ~init:([]) ~f:(fun li vi ->
-      Set.fold vs2 ~init:(li) ~f:(fun lj vj -> (vi, vj) :: lj))
+      Set.fold vs2 ~init:(li) ~f:(fun lj vj -> (vi, vj) :: (vj, vi) :: lj))
   in
   let rec tree_to_graph_r tree =
     match tree.connective with
@@ -127,7 +127,7 @@ let tree_to_graph tree =
   in
   let vertices, edges = tree_to_graph_r tree in
   let edges = Graph.edge_maps edges in
-  {Graph.nodes = vertices; edges = edges}
+  {Graph.nodes = vertices; edges}
 
 let rec is_dual t1 t2 = match t1.connective, t2.connective with
 | Prime (idg1, sub1), Prime (idg2, sub2) -> (Id_graph.is_dual idg1 idg2) && Caml.List.for_all2 is_dual sub1 sub2 (*very suboptimal and also bad*)
@@ -147,16 +147,16 @@ let rec is_empty tree = match tree.connective with
 | Par [] -> true
 | Par sub -> Caml.List.for_all is_empty sub
 
+
 let simplify tree =
-  let gr = tree_to_graph tree in(*drop empty nodes, drop singleton nodes and propagate up, etc*)
-  let max_id =
-    let ids = List.map (Set.elements gr.nodes) ~f:(fun v -> v.id) in
-    match List.max_elt ids ~compare:Int.compare with
-    | None -> 0
-    | Some n -> n
-  in
-  let s = Graph.new_state max_id in
-  tree_from_graph gr s
+  match tree.connective with
+  | Par [] -> None
+  | Tensor [] -> None
+  | Prime (_, []) -> None
+  | Tensor [t] -> Some t
+  | Prime (_,[t]) -> Some t
+  | Par [t] -> Some t
+  | _ -> Some tree
 
   let rec struct_equal t1 t2 = match simplify t1, simplify t2 with
   | None, None -> true
@@ -168,7 +168,7 @@ let simplify tree =
     | Prime (_, (_::_)), Prime (_, []) -> false
     | Prime (_, []), Prime (_, (_::_)) -> false
     | Prime (idg1, sub1), Prime (idg2, sub2) -> (Id_graph.is_iso idg1 idg2) && Caml.List.for_all2 struct_equal sub1 sub2 (*very suboptimal and also bad*)
-    | Atom _, Atom _ -> true (*Equal up to renaming TODO TEST*)
+    | Atom _, Atom _ -> true
     | Tensor [], Tensor [] -> true
     | Tensor (_::_), Tensor [] -> false
     | Tensor [], Tensor (_::_) -> false
@@ -178,3 +178,5 @@ let simplify tree =
     | Par [], Par (_::_) -> false
     | Par sub1, Par sub2 -> Caml.List.for_all2 struct_equal sub1 sub2
     | _ -> false
+
+let equal_tree t1 t2 = Graph.equal_graph (tree_to_graph t1) (tree_to_graph t2)

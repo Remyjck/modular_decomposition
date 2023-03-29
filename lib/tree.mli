@@ -11,5 +11,6 @@ val tree_to_graph : tree -> Graph.graph
 val tree_from_graph : Graph.graph -> Graph.state -> tree option
 val is_dual: tree -> tree -> bool
 val struct_equal: tree -> tree -> bool
+val equal_tree: tree -> tree -> bool
 val is_empty: tree -> bool
 val simplify: tree -> tree option

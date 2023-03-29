@@ -126,3 +126,4 @@ val empty_graph: unit -> graph
 
 
 val is_dual_atom: atom -> atom -> bool
+val equal_graph: graph -> graph -> bool

@@ -1,4 +1,4 @@
-open Core
+open Gscore
 exception READERROR of string
 
 

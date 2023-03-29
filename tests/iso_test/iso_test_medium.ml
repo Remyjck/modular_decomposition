@@ -1,5 +1,5 @@
-open Core
-open Core.Id_graph
+open Gscore
+open Gscore.Id_graph
 exception READERROR of string
 
 (*g, h, g <= h*)

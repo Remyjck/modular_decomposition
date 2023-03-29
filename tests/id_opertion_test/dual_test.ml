@@ -1,5 +1,5 @@
-open Core
-open Core.Id_graph
+open Gscore
+open Gscore.Id_graph
 exception READERROR of string
 
 (*E4 empty 4 nodes, K4 graph complete*)

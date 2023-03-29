@@ -255,3 +255,5 @@ let id_map (vset: verticies) =
       Map.add_exn accum ~key:vertex.id ~data:vertex)
 
 let is_dual_atom (a:atom) (b:atom) = a.pol = not b.pol && a.label = b.label
+
+let equal_graph g1 g2 = (VSet.equal g1.nodes g2.nodes) && (Map.equal (VSet.equal) g1.edges g2.edges)

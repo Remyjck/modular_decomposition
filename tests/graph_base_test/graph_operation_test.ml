@@ -1,4 +1,4 @@
-open Core
+open Gscore
 open Base
 
 let path = "./graph.json"

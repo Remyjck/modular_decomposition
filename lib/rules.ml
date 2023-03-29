@@ -54,7 +54,9 @@ let rec atomic_identity_down (tree: tree) = match tree.connective with
 (*NOTE there are TWO selection that need to happen, which node to move into the context and where to!*)
 (*TODO*)
 
-let switch_par_generic (select_node_in_prime: tree list -> int) (select_first_prime: tree list -> int) (select_corresponding: tree list -> int) tree = match tree.connective with
+type selector =  tree list -> int
+
+let switch_par_generic (select_node_in_prime: selector) (select_first_prime: selector) (select_corresponding: selector) tree = match tree.connective with
 | Par sub ->
   let primes, corresponding = List.partition_tf sub ~f:is_prime in
   if primes = [] then tree
@@ -63,17 +65,17 @@ let switch_par_generic (select_node_in_prime: tree list -> int) (select_first_pr
     let prime_index = select_first_prime primes in
     let prime = List.nth_exn primes prime_index in
     let corr =  List.nth_exn corresponding corr_index in
-    let new_node = match prime.connective with
+    let prime_par_n = match prime.connective with
     | Prime (idg, sub_graphs) ->
       let chosen_node_index = select_node_in_prime sub_graphs in
       let chosen = List.nth_exn sub_graphs chosen_node_index in
-      let chosen_par = {id=chosen.id*2+500; connective=Par[chosen; corr]} in (*TODO +500 because the tree implementation requires distinct ids*)
+      let chosen_par = {id=chosen.id*2+500; connective=Par ([chosen; corr])} in (*TODO +500 because the tree implementation requires distinct ids*)
       let new_nodes = List.mapi sub_graphs ~f:(fun i t -> if i = chosen_node_index then chosen_par else t) in
       {id=prime.id*2; connective=Prime (idg, new_nodes)}
     | _ -> tree in
     let new_primes = List.filteri primes ~f:(fun i _ -> i <> prime_index) in
     let new_corr = List.filteri corresponding ~f:(fun i _ -> i <> corr_index) in
-    let new_sub = new_node :: List.append new_primes new_corr in
+    let new_sub = prime_par_n :: List.append new_primes new_corr in
     {id=tree.id*2; connective=Par new_sub}
   | _ -> tree
 
