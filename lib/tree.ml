@@ -1,8 +1,6 @@
 open Base
 open Id_graph
 
-let (=) = Poly.(=)
-
 type connective =
   | Atom of Graph.atom
   | Tensor of tree list
@@ -138,21 +136,7 @@ let rec is_dual t1 t2 = match t1.connective, t2.connective with
 | Par sub1, Par sub2 -> Caml.List.for_all2 is_dual sub1 sub2
 | _ -> false
 
-let rec struct_equal t1 t2 = match t1.connective, t2.connective with
-| Prime (_, []), Prime (_, []) -> true
-| Prime (_, (_::_)), Prime (_, []) -> false
-| Prime (_, []), Prime (_, (_::_)) -> false
-| Prime (idg1, sub1), Prime (idg2, sub2) -> (Id_graph.is_iso idg1 idg2) && Caml.List.for_all2 struct_equal sub1 sub2 (*very suboptimal and also bad*)
-| Atom a, Atom b -> a = b
-| Tensor [], Tensor [] -> true
-| Tensor (_::_), Tensor [] -> false
-| Tensor [], Tensor (_::_) -> false
-| Tensor sub1, Tensor sub2 -> Caml.List.for_all2 struct_equal sub1 sub2
-| Par [], Par [] -> true
-| Par (_::_), Par [] -> false
-| Par [], Par (_::_) -> false
-| Par sub1, Par sub2 -> Caml.List.for_all2 struct_equal sub1 sub2
-| _ -> false
+
 
 let rec is_empty tree = match tree.connective with
 | Prime (_, []) -> true
@@ -173,3 +157,24 @@ let simplify tree =
   in
   let s = Graph.new_state max_id in
   tree_from_graph gr s
+
+  let rec struct_equal t1 t2 = match simplify t1, simplify t2 with
+  | None, None -> true
+  | Some _, None -> false
+  | None, Some _ -> false
+  | Some t1, Some t2 ->
+  match t1.connective, t2.connective with
+    | Prime (_, []), Prime (_, []) -> true
+    | Prime (_, (_::_)), Prime (_, []) -> false
+    | Prime (_, []), Prime (_, (_::_)) -> false
+    | Prime (idg1, sub1), Prime (idg2, sub2) -> (Id_graph.is_iso idg1 idg2) && Caml.List.for_all2 struct_equal sub1 sub2 (*very suboptimal and also bad*)
+    | Atom _, Atom _ -> true (*Equal up to renaming TODO TEST*)
+    | Tensor [], Tensor [] -> true
+    | Tensor (_::_), Tensor [] -> false
+    | Tensor [], Tensor (_::_) -> false
+    | Tensor sub1, Tensor sub2 -> Caml.List.for_all2 struct_equal sub1 sub2
+    | Par [], Par [] -> true
+    | Par (_::_), Par [] -> false
+    | Par [], Par (_::_) -> false
+    | Par sub1, Par sub2 -> Caml.List.for_all2 struct_equal sub1 sub2
+    | _ -> false

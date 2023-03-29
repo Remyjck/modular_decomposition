@@ -13,8 +13,8 @@ let expected, initial, stateExp, stateInit = match graphs with
 | (expected,stateExp)::(initial,stateInit)::[] -> expected, initial, stateExp, stateInit
 | _ -> raise (READERROR "Could not find valid graph")
 
-let expTree = Caml.Option.get @@ Tree.tree_from_graph expected stateExp
-let initTree = Caml.Option.get @@ Tree.tree_from_graph initial stateInit
+let expTree = Option.get (Option.bind (Tree.tree_from_graph expected stateExp) Tree.simplify)
+let initTree = Option.get (Option.bind (Tree.tree_from_graph initial stateInit) (fun x -> Tree.simplify (Rules.switch_par x)))
 
 
 let () = Pp_new.show_tree expTree
