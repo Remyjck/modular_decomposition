@@ -45,6 +45,30 @@ let parse js_obj =
   ({nodes=nodes; edges=edges},
    new_state max_id)
 
+let make_tree_node node successors: Tree.tree =
+  let connective_label = node |> member "connective" |> to_string in
+  let id = node |> member "id" |> to_int in
+  let connective = match connective_label with
+  | "prime" ->
+    let graph = node |> member "graph" in
+    let id_nodes = List.map (graph |> to_list) ~f:to_int in
+    let id_edges = graph |> to_id_list in
+    let idg: Id_graph.id_graph = {nodes=id_nodes;edges= id_edges} in
+    Tree.Prime (idg, successors)
+  | "par" -> Par successors
+  | "tensor" -> Tensor successors
+  | "atom" -> Atom { label = Int.to_string id; pol= true; } (*TODO could lead to edge cases*)
+  | _ -> failwith "Tried to serialize malformed tree" in
+  {id; connective}
+
+
+let rec parse_tree js_obj =
+  let successors = js_obj |> member "successors" |> to_list in
+  let successors = List.map successors ~f:parse_tree in
+  let node = js_obj |> member "node" in
+  make_tree_node node successors
+
+
 let from_vertex vertex =
   let id = `Int vertex.id in
   let label, pol =
@@ -150,6 +174,8 @@ let parse_idg js_obj : Id_graph.id_graph =
   let edges = js_obj |> member "edges" |> to_id_list in
   {nodes=List.init ~f:(fun x -> x+1) nodes; edges}
 
+
+
 let read_file_as_id_graph filepath =
   let s = Stdio.In_channel.read_all filepath in
   let js_obj = Yojson.Basic.from_string s in
@@ -159,6 +185,16 @@ let read_file_as_id_graphs filepath =
   let s = Stdio.In_channel.read_all filepath in
   let js_obj = Yojson.Basic.from_string s in
   List.map ~f:parse_idg (to_list js_obj)
+
+let read_file_as_tree filepath =
+  let s = Stdio.In_channel.read_all filepath in
+  let js_obj = Yojson.Basic.from_string s in
+  parse_tree js_obj
+
+let read_file_as_trees filepath =
+  let s = Stdio.In_channel.read_all filepath in
+  let js_obj = Yojson.Basic.from_string s in
+  List.map ~f:parse_tree (to_list js_obj)
 
 let clean_file_path filepath = (Caml.Filename.concat (Caml.Filename.dirname filepath) (Caml.Filename.basename filepath) )
 
