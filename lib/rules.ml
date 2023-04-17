@@ -52,9 +52,8 @@ let rec atomic_identity_down (tree: tree) = match tree.connective with
 (*select selects an index from the subnodes*)
 
 (*NOTE there are TWO selection that need to happen, which node to move into the context and where to!*)
-(*TODO*)
 
-type selector =  tree list -> int
+type selector = tree list -> int
 
 let switch_par_generic (select_node_in_prime: selector) (select_first_prime: selector) (select_corresponding: selector) tree = match tree.connective with
 | Par sub ->

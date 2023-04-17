@@ -196,6 +196,26 @@ let read_file_as_trees filepath =
   let js_obj = Yojson.Basic.from_string s in
   List.map ~f:parse_tree (to_list js_obj)
 
+let to_step js_obj =
+  let step_type = js_obj |> member "type" |> to_string in
+  match step_type with
+  | "sw" -> Fingerprint.Switch_Par (Rules.pick_first, Rules.pick_largest, Rules.pick_first_atom_or_first)
+  | "ai" -> Fingerprint.AI_down
+  | "pp" -> Fingerprint.Prime_down
+  | _ -> failwith "Tried to serialize malformed proof"
+
+let parse_fingerprint js_obj : Fingerprint.proof =
+  let id = js_obj |> member "id" |> to_string in
+  let initial = js_obj |> member "initial" |> parse in
+  let expected = js_obj |> member "expected" |> parse in
+  let steps = List.map ~f:to_step (js_obj |> member "steps" |> to_list) in
+  {id; initial; expected; steps}
+
+let read_file_as_fingerprints filepath =
+  let s = Stdio.In_channel.read_all filepath in
+  let js_obj = Yojson.Basic.from_string s in
+  List.map ~f:parse_fingerprint (to_list js_obj)
+
 let clean_file_path filepath = (Caml.Filename.concat (Caml.Filename.dirname filepath) (Caml.Filename.basename filepath) )
 
 let write_tree tree filepath = Yojson.Basic.to_file (clean_file_path filepath) (serialize_tree tree)
