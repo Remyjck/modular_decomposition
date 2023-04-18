@@ -1,0 +1,422 @@
+[
+    {
+        "id": "ai_test",
+        "initial": {
+            "nodes": [
+                {
+                    "id": 9,
+                    "label": "a",
+                    "polarisation": false
+                },
+                {
+                    "id": 11,
+                    "label": "a",
+                    "polarisation": true
+                }
+            ],
+            "edges": []
+        },
+        "expected": {
+            "nodes": [],
+            "edges": []
+        },
+        "steps": [
+            "ai"
+        ]
+    },
+    {
+        "id": "pp_test1",
+        "initial": {
+            "nodes": [
+                {
+                    "id": 1,
+                    "label": "a",
+                    "polarisation": true
+                },
+                {
+                    "id": 11,
+                    "label": "a",
+                    "polarisation": false
+                },
+                {
+                    "id": 2,
+                    "label": "b",
+                    "polarisation": true
+                },
+                {
+                    "id": 22,
+                    "label": "b",
+                    "polarisation": false
+                },
+                {
+                    "id": 3,
+                    "label": "c",
+                    "polarisation": true
+                },
+                {
+                    "id": 33,
+                    "label": "c",
+                    "polarisation": false
+                },
+                {
+                    "id": 4,
+                    "label": "d",
+                    "polarisation": true
+                },
+                {
+                    "id": 44,
+                    "label": "d",
+                    "polarisation": false
+                }
+            ],
+            "edges": [
+                {
+                    "source": 11,
+                    "target": 22
+                },
+                {
+                    "source": 22,
+                    "target": 33
+                },
+                {
+                    "source": 33,
+                    "target": 44
+                },
+                {
+                    "source": 1,
+                    "target": 3
+                },
+                {
+                    "source": 1,
+                    "target": 4
+                },
+                {
+                    "source": 2,
+                    "target": 4
+                }
+            ]
+        },
+        "expected": {
+            "nodes": [
+                {
+                    "id": 11,
+                    "label": "a",
+                    "polarisation": false
+                },
+                {
+                    "id": 1,
+                    "label": "a",
+                    "polarisation": true
+                },
+                {
+                    "id": 22,
+                    "label": "b",
+                    "polarisation": false
+                },
+                {
+                    "id": 2,
+                    "label": "b",
+                    "polarisation": true
+                },
+                {
+                    "id": 33,
+                    "label": "c",
+                    "polarisation": false
+                },
+                {
+                    "id": 3,
+                    "label": "c",
+                    "polarisation": true
+                },
+                {
+                    "id": 44,
+                    "label": "d",
+                    "polarisation": false
+                },
+                {
+                    "id": 4,
+                    "label": "d",
+                    "polarisation": true
+                }
+            ],
+            "edges": [
+                {
+                    "source": 11,
+                    "target": 4
+                },
+                {
+                    "source": 11,
+                    "target": 44
+                },
+                {
+                    "source": 11,
+                    "target": 3
+                },
+                {
+                    "source": 11,
+                    "target": 33
+                },
+                {
+                    "source": 11,
+                    "target": 2
+                },
+                {
+                    "source": 11,
+                    "target": 22
+                },
+                {
+                    "source": 1,
+                    "target": 4
+                },
+                {
+                    "source": 1,
+                    "target": 44
+                },
+                {
+                    "source": 1,
+                    "target": 3
+                },
+                {
+                    "source": 1,
+                    "target": 33
+                },
+                {
+                    "source": 1,
+                    "target": 2
+                },
+                {
+                    "source": 1,
+                    "target": 22
+                },
+                {
+                    "source": 22,
+                    "target": 4
+                },
+                {
+                    "source": 22,
+                    "target": 44
+                },
+                {
+                    "source": 22,
+                    "target": 3
+                },
+                {
+                    "source": 22,
+                    "target": 33
+                },
+                {
+                    "source": 2,
+                    "target": 4
+                },
+                {
+                    "source": 2,
+                    "target": 44
+                },
+                {
+                    "source": 2,
+                    "target": 3
+                },
+                {
+                    "source": 2,
+                    "target": 33
+                },
+                {
+                    "source": 33,
+                    "target": 4
+                },
+                {
+                    "source": 33,
+                    "target": 44
+                },
+                {
+                    "source": 3,
+                    "target": 4
+                },
+                {
+                    "source": 3,
+                    "target": 44
+                }
+            ]
+        },
+        "steps": [
+            "pp"
+        ]
+    },
+    {
+        "id": "pp_test2",
+        "initial": {
+            "nodes": [
+                {
+                    "id": 1,
+                    "label": "a",
+                    "polarisation": true
+                },
+                {
+                    "id": 11,
+                    "label": "a",
+                    "polarisation": false
+                },
+                {
+                    "id": 2,
+                    "label": "b",
+                    "polarisation": true
+                },
+                {
+                    "id": 22,
+                    "label": "b",
+                    "polarisation": false
+                },
+                {
+                    "id": 3,
+                    "label": "c",
+                    "polarisation": true
+                },
+                {
+                    "id": 33,
+                    "label": "c",
+                    "polarisation": false
+                },
+                {
+                    "id": 4,
+                    "label": "d",
+                    "polarisation": true
+                },
+                {
+                    "id": 44,
+                    "label": "d",
+                    "polarisation": false
+                }
+            ],
+            "edges": [
+                {
+                    "source": 11,
+                    "target": 22
+                },
+                {
+                    "source": 22,
+                    "target": 33
+                },
+                {
+                    "source": 33,
+                    "target": 44
+                },
+                {
+                    "source": 1,
+                    "target": 3
+                },
+                {
+                    "source": 1,
+                    "target": 4
+                },
+                {
+                    "source": 2,
+                    "target": 4
+                }
+            ]
+        },
+        "expected": {
+            "nodes": [],
+            "edges": []
+        },
+        "steps": [
+            "pp",
+            "ai"
+        ]
+    },
+    {
+        "id": "sw_test",
+        "initial": {
+            "nodes": [
+                {
+                    "id": 1,
+                    "label": "a",
+                    "polarisation": true
+                },
+                {
+                    "id": 2,
+                    "label": "b",
+                    "polarisation": true
+                },
+                {
+                    "id": 3,
+                    "label": "c",
+                    "polarisation": true
+                },
+                {
+                    "id": 4,
+                    "label": "d",
+                    "polarisation": true
+                },
+                {
+                    "id": 5,
+                    "label": "e",
+                    "polarisation": true
+                }
+            ],
+            "edges": [
+                {
+                    "source": 1,
+                    "target": 2
+                },
+                {
+                    "source": 2,
+                    "target": 3
+                },
+                {
+                    "source": 3,
+                    "target": 4
+                }
+            ]
+        },
+        "expected": {
+            "nodes": [
+                {
+                    "id": 1,
+                    "label": "a",
+                    "polarisation": true
+                },
+                {
+                    "id": 2,
+                    "label": "b",
+                    "polarisation": true
+                },
+                {
+                    "id": 3,
+                    "label": "c",
+                    "polarisation": true
+                },
+                {
+                    "id": 4,
+                    "label": "d",
+                    "polarisation": true
+                },
+                {
+                    "id": 5,
+                    "label": "e",
+                    "polarisation": true
+                }
+            ],
+            "edges": [
+                {
+                    "source": 1,
+                    "target": 2
+                },
+                {
+                    "source": 2,
+                    "target": 3
+                },
+                {
+                    "source": 3,
+                    "target": 4
+                },
+                {
+                    "source": 5,
+                    "target": 2
+                }
+            ]
+        },
+        "steps": [
+            "sw"
+        ]
+    }
+]
