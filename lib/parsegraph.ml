@@ -197,7 +197,7 @@ let read_file_as_trees filepath =
   List.map ~f:parse_tree (to_list js_obj)
 
 let to_step js_obj =
-  let step_type = js_obj |> member "type" |> to_string in
+  let step_type = js_obj |> to_string in
   match step_type with
   | "sw" -> Fingerprint.Switch_Par (Rules.pick_first, Rules.pick_largest, Rules.pick_first_atom_or_first)
   | "ai" -> Fingerprint.AI_down
