@@ -42,45 +42,6 @@ let from_map (map: Util.IMap.t) =
   in
   {nodes = nodes; edges = edges}
 
-let tree_from_condensed (graph : Graph.graph) state =
-  let () = assert(Set.length graph.nodes <= 1) in
-  match Set.choose graph.nodes with
-    | None -> None
-    | Some root ->
-      let rec tree_from_id id (state : Graph.state) =
-        let vertex : Graph.vertex = Hashtbl.find_exn state.id_map id in
-        match vertex.connective with
-        | Graph.Atom atom -> {connective = Atom atom; id = vertex.id}
-        | Graph.Tensor iset ->
-          let tree_list = trees_from_id_list (Set.elements iset) state in
-          let tensor_lists, tree_list = List.partition_map tree_list ~f:(fun t ->
-            match t.connective with
-            | Tensor tl -> First tl
-            | _ -> Second t)
-          in
-          let successors = List.concat (tree_list :: tensor_lists) in
-          {connective = Tensor successors; id = vertex.id}
-        | Graph.Par iset ->
-          let tree_list = trees_from_id_list (Set.elements iset) state in
-          let par_lists, tree_list = List.partition_map tree_list ~f:(fun t ->
-            match t.connective with
-            | Par tl -> First tl
-            | _ -> Second t)
-          in
-          let successors = List.concat (tree_list :: par_lists) in
-          {connective = Par successors; id = vertex.id}
-        | Graph.Prime map ->
-          let id_graph = from_map map in
-          let tree_list = trees_from_id_list id_graph.nodes state in
-          {connective = Prime (id_graph, tree_list); id = vertex.id}
-
-      and trees_from_id_list id_list state =
-        List.map id_list ~f:(Fn.flip tree_from_id state)
-      in
-      Some (tree_from_id root.id state)
-
-let tree_from_graph (graph: Graph.graph) (state: Graph.state) = if Graph.is_empty graph then Some (empty_tree state.total_vertices) else tree_from_condensed (Condense.process graph state) state
-
 (** [tree_to_graph tree] converts a tree to a graph *)
 let tree_to_graph tree =
   let join_sets vs1 vs2 =
@@ -151,34 +112,36 @@ let rec is_empty tree = match tree.connective with
 | Par sub -> Caml.List.for_all is_empty sub
 
 
-let rec simplify tree =
-  match tree.connective with
-  | Par [] -> None
-  | Tensor [] -> None
-  | Prime (_, []) -> None
-  | Tensor [t] -> Some {t with id=t.id*19}
-  | Prime (_,[t]) -> Some {t with id=t.id*17}
-  | Par [t] -> Some {t with id=t.id*13}
-  | Atom _ -> Some tree
-  | Par trees ->
-    let nodes = List.filter_map trees ~f:(fun t -> simplify t) in
-    (
-      match nodes with
-      | [] -> None
-      | [t] -> Some {t with id=t.id*5}
-      | _ -> Some {id=tree.id*7; connective=Par nodes}
-    )
+let simplify tree =
+  let rec aux tree =
+    match tree.connective with
+    | Par [] -> None
+    | Tensor [] -> None
+    | Prime (_, []) -> None
+    | Tensor [t] -> Some {t with id=t.id*19}
+    | Prime (_,[t]) -> Some {t with id=t.id*17}
+    | Par [t] -> Some {t with id=t.id*13}
+    | Atom _ -> Some tree
+    | Par trees ->
+      let nodes = List.filter_map trees ~f:(fun t -> aux t) in
+      (
+        match nodes with
+        | [] -> None
+        | [t] -> Some {t with id=t.id*5}
+        | _ -> Some {id=tree.id*7; connective=Par nodes}
+      )
 
-  | Tensor trees ->
-    let nodes = List.filter_map trees ~f:(fun t -> simplify t) in
-    (
-      match nodes with
-      | [] -> None
-      | [t] -> Some {t with id=t.id*23}
-      | _ -> Some {id=tree.id*3; connective=Par nodes}
-    )
-  | Prime (_,_) -> Some tree
-     (*not obvious what should be done with empty nodes in an idg*)
+    | Tensor trees ->
+      let nodes = List.filter_map trees ~f:(fun t -> aux t) in
+      (
+        match nodes with
+        | [] -> None
+        | [t] -> Some {t with id=t.id*23}
+        | _ -> Some {id=tree.id*3; connective=Par nodes}
+      )
+    | Prime (_,_) -> Some tree in
+   aux tree
+
 
   let rec struct_equal t1 t2 = match simplify t1, simplify t2 with
   | None, None -> true
@@ -202,3 +165,5 @@ let rec simplify tree =
     | _ -> false
 
 let equal_tree t1 t2 = Graph.equal_graph (tree_to_graph t1) (tree_to_graph t2)
+
+

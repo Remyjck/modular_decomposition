@@ -1,6 +1,0 @@
-(library
- (name test_tree_to_graph)
- (inline_tests)
- (preprocess
-  (pps ppx_inline_test))
- (libraries gscore))

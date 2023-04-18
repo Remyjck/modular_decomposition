@@ -7,17 +7,15 @@ type rule_id =
 
 type proof = {
   id: string;
-  initial: Graph.graph * Graph.state;
-  expected: Graph.graph * Graph.state;
+  initial: Graph.graph;
+  expected: Graph.graph;
   steps: rule_id list;
 }
 
 let verify pf =
   let {id=_; initial; expected; steps}= pf in
-  let initial_graph, initial_state = initial in
-  let expected_graph, expected_state = expected in
-  let initial_tree =  Caml.Option.get @@ Tree.tree_from_graph initial_graph initial_state in
-  let expected_tree = Caml.Option.get @@ Tree.tree_from_graph expected_graph expected_state in
+  let initial_tree =  Caml.Option.get @@ Condense.tree_from_graph initial in
+  let expected_tree = Caml.Option.get @@ Condense.tree_from_graph expected in
   let rec aux proof_state = function
   | [] -> if Tree.struct_equal proof_state expected_tree then None else Some proof_state
   | step::rest ->

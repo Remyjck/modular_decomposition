@@ -36,14 +36,7 @@ let to_edge_maps nodes js_obj =
 let parse js_obj =
   let nodes = js_obj |> member "nodes" |> to_nodes in
   let edges = js_obj |> member "edges" |> to_edge_maps nodes in
-  let max_id =
-    let ids = List.map (Set.elements nodes) ~f:(fun v -> v.id) in
-    match List.max_elt ids ~compare:Int.compare with
-    | None -> 0
-    | Some n -> n
-  in
-  ({nodes=nodes; edges=edges},
-   new_state max_id)
+  {nodes; edges}
 
 let make_tree_node node successors: Tree.tree =
   let connective_label = node |> member "connective" |> to_string in

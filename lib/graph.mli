@@ -89,21 +89,13 @@ module VMap : sig type t = VSet.t Base.Map.M(Vertex).t end
 type verticies = VSet.t
 type edges = VMap.t
 type graph = { nodes : verticies; edges : edges; }
-type state = {
-  mutable total_vertices : int;
-  id_map : (int, vertex) Base.Hashtbl.t;
-}
-val fresh_id : state -> int
-val new_state : int -> state
-val add_vertices_to_hash : verticies -> state -> unit
 val add_vertex : Vertex.t -> graph -> graph
 val graph_difference : graph -> verticies -> graph
 val find_or_empty :
   ('a, (Vertex.t, Vertex.comparator_witness) Base.Set.t, 'b) Base.Map.t ->
   'a -> (Vertex.t, Vertex.comparator_witness) Base.Set.t
 val successors : graph -> verticies -> verticies
-val replace : graph -> verticies -> Vertex.t -> state -> graph
-
+val remove_vertices_edges: verticies -> edges -> edges
 (** Connects every vertex from a list of verticies in the graph to a given vertex*)
 val connect_vertices_to_vertex : verticies -> Vertex.t -> graph -> graph
 (** Connects every vertex from the first list to every vertex in the second list within the graph*)
@@ -111,7 +103,7 @@ val connect_vertices : verticies -> verticies -> graph -> graph
 val induced_subgraph : graph -> verticies -> graph
 val edge_tuple_list : edges -> (Vertex.t * Vertex.t) list
 val edge_maps : (Vertex.t * Vertex.t) list -> edges
-val to_graph : Vertex.t list -> (Vertex.t * Vertex.t) list -> graph * state
+val to_graph : Vertex.t list -> (Vertex.t * Vertex.t) list -> graph
 val vset_to_iset : verticies -> Util.ISet.t
 val iset_to_vset : (int, Vertex.t, 'a) Base.Map.t -> Util.ISet.t -> verticies
 val vmap_to_imap : edges -> verticies -> Util.IMap.t

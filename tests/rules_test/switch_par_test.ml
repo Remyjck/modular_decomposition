@@ -9,11 +9,11 @@ let path = "./graph_sp_suite.json"
 
 let graphs = Parsegraph.read_file_as_graphs path
 
-let expected, initial, stateExp, stateInit = match graphs with
-| (expected,stateExp)::(initial,stateInit)::[] -> expected, initial, stateExp, stateInit
+let expected, initial = match graphs with
+| expected::initial::[] -> expected, initial
 | _ -> raise (READERROR "Could not find valid graph")
 
-let expTree = Option.get (Option.bind (Tree.tree_from_graph expected stateExp) Tree.simplify)
-let initTree = Option.get (Option.bind (Tree.tree_from_graph initial stateInit) Tree.simplify)
+let expTree = Option.get (Condense.tree_from_graph expected)
+let initTree = Option.get (Condense.tree_from_graph initial)
 
 let%test "Note6.3_s_par_only" =  (Rules.switch_par initTree) =. expTree

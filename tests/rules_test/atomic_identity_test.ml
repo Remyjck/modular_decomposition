@@ -6,7 +6,7 @@ let (=.) = Tree.struct_equal
 let path = "./graph_ai_suite.json"
 
 let graphs = Parsegraph.read_file_as_graphs path
-let trees = List.map (fun (g,s) -> Option.get (Tree.tree_from_graph g s)) graphs
+let trees = List.map (fun g -> Option.get (Condense.tree_from_graph g)) graphs
 
 (*
   gr1: a par not a

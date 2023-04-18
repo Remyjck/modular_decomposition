@@ -7,7 +7,7 @@ val to_id_list : Yojson.Basic.t -> (int * int) list
 val to_assoc_list :
   (int * int) list -> Graph.verticies -> (Graph.vertex * Graph.vertex) list
 val to_edge_maps : Graph.verticies -> Yojson.Basic.t -> Graph.edges
-val parse : Yojson.Basic.t -> Graph.graph * Graph.state
+val parse : Yojson.Basic.t -> Graph.graph
 val from_vertex :
   Graph.vertex ->
   [> `Assoc of
@@ -31,8 +31,8 @@ val serialize_graph :
              list ])
        list ]
 val serialize_tree : Tree.tree -> Yojson.Basic.t
-val read_file_as_graph : string -> Graph.graph * Graph.state
-val read_file_as_graphs : string -> (Graph.graph * Graph.state) list
+val read_file_as_graph : string -> Graph.graph
+val read_file_as_graphs : string -> (Graph.graph) list
 val read_file_as_id_graph: string -> Id_graph.id_graph
 val read_file_as_id_graphs: string -> Id_graph.id_graph list
 val read_file_as_tree: string -> Tree.tree

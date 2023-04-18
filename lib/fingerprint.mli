@@ -4,8 +4,8 @@ type rule_id =
   | Switch_Par of Rules.selector * Rules.selector * Rules.selector
 type proof = {
   id : string;
-  initial : Graph.graph * Graph.state;
-  expected : Graph.graph * Graph.state;
+  initial : Graph.graph;
+  expected : Graph.graph;
   steps : rule_id list;
 }
 

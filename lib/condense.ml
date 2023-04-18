@@ -16,6 +16,11 @@ module Subset = struct
   include Comparable.Make(T)
 end
 
+type state = {
+  mutable total_vertices : int;
+  id_map : (int, Vertex.t) Hashtbl.t;
+}
+
 (* Algorithm 2.2 *)
 (** [smallest_condensible graph set]: returns the smallest condensible set
     containing all vertices of [set] *)
@@ -35,6 +40,24 @@ let smallest_condensible graph vset =
   in
   Some (add_to_set (Set.empty (module Vertex)) vset)
 
+let new_state total_vertices =
+  {total_vertices; id_map = Hashtbl.create (module Int)}
+
+let state_of_graph graph =
+  let max_id =
+    let ids = List.map (Set.elements graph.nodes) ~f:(fun v -> v.id) in
+    match List.max_elt ids ~compare:Int.compare with
+    | None -> 0
+    | Some n -> n
+  in
+  new_state max_id
+
+
+let fresh_id state =
+  state.total_vertices <- state.total_vertices + 1;
+  state.total_vertices
+
+
 let subset_contains v subset =
   match subset with
   | Singleton vertex -> Vertex.equal vertex v
@@ -46,6 +69,27 @@ let subset_add v subset =
   | Singleton _ -> raise_s [%message "error" "Cannot add vertex to Singleton subset"]
   | Clique vset -> Clique (Set.add vset v)
   | IndSet vset -> IndSet (Set.add vset v)
+
+let add_vertices_to_hash (vertices:verticies) state =
+  Set.iter vertices
+  ~f:(fun v -> Hashtbl.add_exn state.id_map ~key:v.id ~data:v)
+
+let replace graph (h: verticies) vertex state =
+  let () = assert(Set.is_subset h ~of_:graph.nodes) in
+  let () = add_vertices_to_hash h state in
+  let new_nodes = Set.diff graph.nodes h |> Fn.flip Set.add vertex in
+  let removed_edges = remove_vertices_edges h graph.edges in
+  let new_successors = successors graph h |> Fn.flip Set.diff h in
+  let new_edges = Map.update removed_edges vertex ~f:(function
+    | None -> new_successors
+    | Some vset -> Set.union vset new_successors)
+  in
+  let new_edges = Set.fold new_successors ~init:new_edges ~f:(fun accum v ->
+    Map.update accum v ~f:(function
+      | None -> singleton vertex
+      | Some vset -> Set.add vset vertex))
+  in
+  {nodes = new_nodes; edges = new_edges}
 
 
 
@@ -203,31 +247,40 @@ let return graph state =
     in
     graph
 
+
+
+
 (* Algorithm 3.4 *)
-let rec process graph state =
-  if Set.length graph.nodes <= 1 then return graph state else
-  let condensed_graph = condense_cliques graph state in
-  if Set.length condensed_graph.nodes <= 1 then return condensed_graph state else
-  let min_cond = condensible_subgraphs condensed_graph in
-  if Set.is_empty min_cond then
-    let node = Prime (vmap_to_imap condensed_graph.edges condensed_graph.nodes) in
-    let res = condense_prime node condensed_graph.nodes condensed_graph state in
-    return res state
-  else
-    let prime_list =
-      Set.fold min_cond
-        ~init:[]
-        ~f:(fun accum vset ->
-          let subgraph = induced_subgraph condensed_graph vset in
-          let node = Prime (vmap_to_imap subgraph.edges subgraph.nodes) in
-          (node, vset) :: accum)
-    in
-    let prime_condensed_graph =
-      List.fold prime_list
-        ~init:condensed_graph
-        ~f:(fun graph (node, h) -> condense_prime node h graph state)
-    in
-    process prime_condensed_graph state
+let process_state graph =
+  let rec process_r graph state=
+    if Set.length graph.nodes <= 1 then return graph state else
+    let condensed_graph = condense_cliques graph state in
+    if Set.length condensed_graph.nodes <= 1 then return condensed_graph state else
+    let min_cond = condensible_subgraphs condensed_graph in
+    if Set.is_empty min_cond then
+      let node = Prime (vmap_to_imap condensed_graph.edges condensed_graph.nodes) in
+      let res = condense_prime node condensed_graph.nodes condensed_graph state in
+      return res state
+    else
+      let prime_list =
+        Set.fold min_cond
+          ~init:[]
+          ~f:(fun accum vset ->
+            let subgraph = induced_subgraph condensed_graph vset in
+            let node = Prime (vmap_to_imap subgraph.edges subgraph.nodes) in
+            (node, vset) :: accum)
+      in
+      let prime_condensed_graph =
+        List.fold prime_list
+          ~init:condensed_graph
+          ~f:(fun graph (node, h) -> condense_prime node h graph state)
+      in
+      process_r prime_condensed_graph state in
+      let state = state_of_graph graph in
+      let processed = process_r graph state in
+      processed, state
+
+let process g=  fst (process_state g)
 
 let isPrime graph =
   let cliques_and_in = cc_and_is graph in
@@ -242,3 +295,46 @@ let isPrime graph =
         false
   else
     false
+
+
+
+let tree_from_condensed (graph,state) =
+  let () = assert(Set.length graph.nodes <= 1) in
+  match Set.choose graph.nodes with
+    | None -> None
+    | Some root ->
+      let rec tree_from_id id (state : state): Tree.tree =
+        let vertex : vertex = Hashtbl.find_exn state.id_map id in
+        match vertex.connective with
+        | Atom atom -> {connective = Atom atom; id = vertex.id}
+        | Tensor iset ->
+          let tree_list = trees_from_id_list (Set.elements iset) state in
+          let tensor_lists, tree_list = List.partition_map tree_list ~f:(fun (t:Tree.tree) ->
+            match t.connective with
+            | Tree.Tensor tl -> First tl
+            | _ -> Second t)
+          in
+          let successors = List.concat (tree_list :: tensor_lists) in
+          {connective = Tensor successors; id = vertex.id}
+        | Par iset ->
+          let tree_list = trees_from_id_list (Set.elements iset) state in
+          let par_lists, tree_list = List.partition_map tree_list ~f:(fun t ->
+            match t.connective with
+            | Par tl -> First tl
+            | _ -> Second t)
+          in
+          let successors = List.concat (tree_list :: par_lists) in
+          {connective = Par successors; id = vertex.id}
+        | Prime map ->
+          let id_graph = Tree.from_map map in
+          let tree_list = trees_from_id_list id_graph.nodes state in
+          {connective = Prime (id_graph, tree_list); id = vertex.id}
+
+      and trees_from_id_list id_list state =
+        List.map id_list ~f:(Fn.flip tree_from_id state)
+      in
+      Some (tree_from_id root.id state)
+
+
+
+let tree_from_graph (graph: Graph.graph) = if Graph.is_empty graph then Some (Tree.empty_tree 1) else tree_from_condensed (process_state graph)

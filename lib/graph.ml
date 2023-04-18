@@ -74,36 +74,15 @@ let empty_vertex_map (): edges = Map.empty (module Vertex)
 
 let empty_graph () = {nodes=empty_vertex_set (); edges=empty_vertex_map () }
 
-
-
-type state = {
-  mutable total_vertices : int;
-  id_map : (int, Vertex.t) Hashtbl.t;
-}
-
 let singleton v : verticies= Set.singleton (module Vertex) v
 
-let new_state total_vertices =
-  {total_vertices; id_map = Hashtbl.create (module Int)}
 
-let fresh_id state =
-  state.total_vertices <- state.total_vertices + 1;
-  state.total_vertices
 
-let add_vertices_to_hash (vertices:verticies) state =
-  Set.iter vertices
-  ~f:(fun v -> Hashtbl.add_exn state.id_map ~key:v.id ~data:v)
 
 let add_vertex vertex graph =
     {nodes = Set.add graph.nodes vertex; edges = graph.edges}
 
-(** [remove_vertex_edges]: given a mapping [edges], remove [vertex] from
-    its keys and values  *)
-let remove_vertex_edges (edges:edges) vertex : edges =
-  Map.remove edges vertex |> Map.map ~f:(Fn.flip Set.remove vertex)
 
-let remove_vertices_edges (vertices: verticies) edges =
-  Set.fold vertices ~init:edges ~f:remove_vertex_edges
 
 (** [graph_difference graph vertices]: subgraph of [graph] that contains all vertices not in
     [vertices] *)
@@ -130,23 +109,6 @@ let successors graph (vertices: verticies) : verticies =
         in
         Set.union accum to_add)
     |> Fn.flip Set.diff vertices
-
-let replace graph (h: verticies) vertex state =
-  let () = assert(Set.is_subset h ~of_:graph.nodes) in
-  let () = add_vertices_to_hash h state in
-  let new_nodes = Set.diff graph.nodes h |> Fn.flip Set.add vertex in
-  let removed_edges = remove_vertices_edges h graph.edges in
-  let new_successors = successors graph h |> Fn.flip Set.diff h in
-  let new_edges = Map.update removed_edges vertex ~f:(function
-    | None -> new_successors
-    | Some vset -> Set.union vset new_successors)
-  in
-  let new_edges = Set.fold new_successors ~init:new_edges ~f:(fun accum v ->
-    Map.update accum v ~f:(function
-      | None -> singleton vertex
-      | Some vset -> Set.add vset vertex))
-  in
-  {nodes = new_nodes; edges = new_edges}
 
 (** [connect_vertices vertices vertex graph]: for a given [graph],
     add edges connecting every element of [vertices] to [vertex] *)
@@ -176,6 +138,14 @@ let connect_vertices v1 v2 g =
 let induced_subgraph graph (vertices: verticies) =
   let edges = intersect_map vertices graph.edges in
   {nodes = vertices; edges = edges}
+
+(** [remove_vertex_edges]: given a mapping [edges], remove [vertex] from
+  its keys and values  *)
+let remove_vertex_edges (edges:edges) vertex : edges =
+  Map.remove edges vertex |> Map.map ~f:(Fn.flip Set.remove vertex)
+
+let remove_vertices_edges (vertices: verticies) edges =
+  Set.fold vertices ~init:edges ~f:remove_vertex_edges
 
 (** [edge_tuple_list edges]: given a mapping [edges],
     return a corresponding list of edges  *)
@@ -219,13 +189,12 @@ let edge_maps edge_list : edges =
         ~combine:(fun ~key:_ v1 v2 -> Set.union v1 v2)
 
 let to_graph vertex_list edge_list =
-  let vertices, max_id = List.fold vertex_list
-    ~init:(empty_vertex_set (), 0)
-    ~f:(fun (acum, max) v ->
-      (Set.add acum v), (Int.max max v.id))
+  let nodes = List.fold vertex_list
+    ~init:(empty_vertex_set ())
+    ~f:(fun acum v -> Set.add acum v)
   in
   let edges = edge_maps edge_list in
-  {nodes=vertices; edges=edges}, {total_vertices=max_id; id_map=Hashtbl.create (module Int)}
+  {nodes; edges}
 
 let vset_to_iset (vset : verticies) : ISet.t =
   Set.map (module Int) vset ~f:(fun v -> v.id)
