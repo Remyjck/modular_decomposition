@@ -17,4 +17,4 @@ let%test "Inequality_pairwise" = match trees with
   | _ -> false
 let%test "Symmetry" = List.for_all2 (fun t1 t2 -> Tree.struct_equal t1 t2 && Tree.struct_equal t2 t1) trees trees
 
-(*TODO empty tree test and simplification tests*)
+

@@ -16,7 +16,4 @@ let expected, initial, stateExp, stateInit = match graphs with
 let expTree = Option.get (Option.bind (Tree.tree_from_graph expected stateExp) Tree.simplify)
 let initTree = Option.get (Option.bind (Tree.tree_from_graph initial stateInit) Tree.simplify)
 
-
-let () = Pp_new.show_tree (Rules.switch_par  initTree)
-
 let%test "Note6.3_s_par_only" =  (Rules.switch_par initTree) =. expTree
