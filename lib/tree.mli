@@ -14,3 +14,4 @@ val struct_equal: tree -> tree -> bool
 val equal_tree: tree -> tree -> bool
 val is_empty: tree -> bool
 val simplify: tree -> tree option
+val empty_tree: int -> tree

@@ -1,6 +1,7 @@
 open Base
 open Id_graph
 
+
 type connective =
   | Atom of Graph.atom
   | Tensor of tree list
@@ -11,6 +12,8 @@ and tree = {
     connective : connective;
     id: int;
     }
+
+let empty_tree id = {id; connective=Par []}
 
 let successors tree =
   match tree.connective with
@@ -76,7 +79,7 @@ let tree_from_condensed (graph : Graph.graph) state =
       in
       Some (tree_from_id root.id state)
 
-let tree_from_graph graph state = tree_from_condensed (Condense.process graph state) state
+let tree_from_graph (graph: Graph.graph) (state: Graph.state) = if Graph.is_empty graph then Some (empty_tree state.total_vertices) else tree_from_condensed (Condense.process graph state) state
 
 (** [tree_to_graph tree] converts a tree to a graph *)
 let tree_to_graph tree =
@@ -148,15 +151,34 @@ let rec is_empty tree = match tree.connective with
 | Par sub -> Caml.List.for_all is_empty sub
 
 
-let simplify tree =
+let rec simplify tree =
   match tree.connective with
   | Par [] -> None
   | Tensor [] -> None
   | Prime (_, []) -> None
-  | Tensor [t] -> Some t
-  | Prime (_,[t]) -> Some t
-  | Par [t] -> Some t
-  | _ -> Some tree
+  | Tensor [t] -> Some {t with id=t.id*19}
+  | Prime (_,[t]) -> Some {t with id=t.id*17}
+  | Par [t] -> Some {t with id=t.id*13}
+  | Atom _ -> Some tree
+  | Par trees ->
+    let nodes = List.filter_map trees ~f:(fun t -> simplify t) in
+    (
+      match nodes with
+      | [] -> None
+      | [t] -> Some {t with id=t.id*5}
+      | _ -> Some {id=tree.id*7; connective=Par nodes}
+    )
+
+  | Tensor trees ->
+    let nodes = List.filter_map trees ~f:(fun t -> simplify t) in
+    (
+      match nodes with
+      | [] -> None
+      | [t] -> Some {t with id=t.id*23}
+      | _ -> Some {id=tree.id*3; connective=Par nodes}
+    )
+  | Prime (_,_) -> Some tree
+     (*not obvious what should be done with empty nodes in an idg*)
 
   let rec struct_equal t1 t2 = match simplify t1, simplify t2 with
   | None, None -> true
