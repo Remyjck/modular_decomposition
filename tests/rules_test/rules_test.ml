@@ -17,8 +17,8 @@ let len = Array.length proofs_arr
 let () = assert (len = 4)
 
 
-let () = Pp_new.show_tree (Option.get (Fingerprint.verify (proofs_arr.(3))))
-let () = Pp_new.show_graph_as_tree proofs_arr.(3).expected
+let () = Pp_new.show_tree_as_graph_json (Option.get (Fingerprint.verify (proofs_arr.(3))))
+let () = Pp_new.show_graph_json proofs_arr.(3).expected
 
 let%test "test_ai" = None = Fingerprint.verify (proofs_arr.(0))
 let%test "test_pp_one_step" = None = Fingerprint.verify (proofs_arr.(1))

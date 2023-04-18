@@ -1,0 +1,145 @@
+{
+    "node": {
+        "graph": {
+            "nodes": [
+                1,
+                2,
+                3,
+                4
+            ],
+            "edges": [
+                {
+                    "source": 1,
+                    "target": 2
+                },
+                {
+                    "source": 2,
+                    "target": 3
+                },
+                {
+                    "source": 3,
+                    "target": 4
+                }
+            ]
+        },
+        "connective": "prime",
+        "id": 200
+    },
+    "successors": [
+        {
+            "node": {
+                "connective": "par",
+                "id": 502
+            },
+            "successors": [
+                {
+                    "node": {
+                        "connective": "atom",
+                        "id": 1
+                    },
+                    "successors": []
+                },
+                {
+                    "node": {
+                        "connective": "atom",
+                        "id": 5
+                    },
+                    "successors": []
+                }
+            ]
+        },
+        {
+            "node": {
+                "connective": "atom",
+                "id": 2
+            },
+            "successors": []
+        },
+        {
+            "node": {
+                "connective": "atom",
+                "id": 3
+            },
+            "successors": []
+        },
+        {
+            "node": {
+                "connective": "atom",
+                "id": 4
+            },
+            "successors": []
+        }
+    ]
+}{
+    "node": {
+        "graph": {
+            "nodes": [
+                2,
+                3,
+                4,
+                6
+            ],
+            "edges": [
+                {
+                    "source": 2,
+                    "target": 6
+                },
+                {
+                    "source": 2,
+                    "target": 3
+                },
+                {
+                    "source": 3,
+                    "target": 4
+                }
+            ]
+        },
+        "connective": "prime",
+        "id": 7
+    },
+    "successors": [
+        {
+            "node": {
+                "connective": "atom",
+                "id": 2
+            },
+            "successors": []
+        },
+        {
+            "node": {
+                "connective": "atom",
+                "id": 3
+            },
+            "successors": []
+        },
+        {
+            "node": {
+                "connective": "atom",
+                "id": 4
+            },
+            "successors": []
+        },
+        {
+            "node": {
+                "connective": "par",
+                "id": 6
+            },
+            "successors": [
+                {
+                    "node": {
+                        "connective": "atom",
+                        "id": 1
+                    },
+                    "successors": []
+                },
+                {
+                    "node": {
+                        "connective": "atom",
+                        "id": 5
+                    },
+                    "successors": []
+                }
+            ]
+        }
+    ]
+}
