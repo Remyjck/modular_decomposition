@@ -257,3 +257,5 @@ let id_map (vset: verticies) =
 let is_dual_atom (a:atom) (b:atom) = a.pol = not b.pol && a.label = b.label
 
 let equal_graph g1 g2 = (VSet.equal g1.nodes g2.nodes) && (Map.equal (VSet.equal) g1.edges g2.edges)
+
+let is_empty g = (Set.is_empty g.nodes) && (Map.is_empty g.edges)
