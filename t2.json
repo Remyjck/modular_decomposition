@@ -28,44 +28,6 @@
     ],
     "edges": [
         {
-            "source": 2,
-            "target": 3
-        },
-        {
-            "source": 3,
-            "target": 4
-        }
-    ]
-}{
-    "nodes": [
-        {
-            "id": 1,
-            "label": "a",
-            "polarisation": true
-        },
-        {
-            "id": 2,
-            "label": "b",
-            "polarisation": true
-        },
-        {
-            "id": 3,
-            "label": "c",
-            "polarisation": true
-        },
-        {
-            "id": 4,
-            "label": "d",
-            "polarisation": true
-        },
-        {
-            "id": 5,
-            "label": "e",
-            "polarisation": true
-        }
-    ],
-    "edges": [
-        {
             "source": 1,
             "target": 2
         },

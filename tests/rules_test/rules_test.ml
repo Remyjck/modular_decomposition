@@ -7,20 +7,24 @@ exception READERROR of string
 let path = "./fingerprints.json"
 
 let proofs = Parsegraph.read_file_as_fingerprints path
-(*Graph from example 4.16 in "An analytic proof system on graphs"*)
 
 let proofs_arr = Array.of_list proofs
 
 let len = Array.length proofs_arr
 
 
-let () = assert (len = 4)
+let () = assert (len = 9)
 
 
-let () = Pp_new.show_tree_as_graph_json (Option.get (Fingerprint.verify (proofs_arr.(3))))
-let () = Pp_new.show_graph_json proofs_arr.(3).expected
 
-let%test "test_ai" = None = Fingerprint.verify (proofs_arr.(0))
-let%test "test_pp_one_step" = None = Fingerprint.verify (proofs_arr.(1))
-let%test "test_pp_verif" = None = Fingerprint.verify (proofs_arr.(2))
-let%test "test_sw" = None = Fingerprint.verify (proofs_arr.(3))
+let () = Pp_new.show_tree_as_graph_json (Option.get (Condense.tree_from_graph proofs_arr.(8).expected))
+
+let%test "test_ai1" = None = Fingerprint.verify (proofs_arr.(0))
+let%test "test_ai2" = None <> Fingerprint.verify (proofs_arr.(1))
+let%test "test_ai3" = None = Fingerprint.verify (proofs_arr.(2))
+let%test "test_ai4" = None <> Fingerprint.verify (proofs_arr.(3))
+let%test "test_ai5" = None <> Fingerprint.verify (proofs_arr.(4))
+let%test "test_ai6" = None = Fingerprint.verify (proofs_arr.(5))
+let%test "test_pp_one_step" = None = Fingerprint.verify (proofs_arr.(6))
+let%test "test_pp_verif" = None = Fingerprint.verify (proofs_arr.(7))
+let%test "test_sw" = None = Fingerprint.verify (proofs_arr.(8))

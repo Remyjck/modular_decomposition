@@ -17,7 +17,7 @@ let is_prime tree = match tree.connective with
 | _ -> false
 
 
-let find_dual_pair trees = Util.find_fitting_pair trees is_dual
+let find_dual_pair trees = Util.find_fitting_pair trees Equality.is_dual
 
 let find_atomic_dual_pair trees = Util.find_fitting_pair trees (fun t1 t2 ->
     match t1.connective, t2.connective with
@@ -41,9 +41,9 @@ let rec atomic_identity_down (tree: tree) = match tree.connective with
   let pair_option = find_atomic_dual_pair nodes in
   let new_node = match pair_option with
   | None -> (propagate_once atomic_identity_down tree).connective
-  | Some (a,b) -> Par (List.filter nodes ~f:(fun t -> not (Tree.struct_equal t a || Tree.struct_equal t b))) in
+  | Some (a,b) -> Par (List.filter nodes ~f:(fun t -> not (Equality.struct_equal t a || Equality.struct_equal t b))) in
   let new_tree = ({connective=new_node; id=tree.id+1}) in
-  if Tree.struct_equal new_tree tree then tree else atomic_identity_down new_tree
+  if Equality.struct_equal new_tree tree then tree else atomic_identity_down new_tree
 | _ -> propagate_once atomic_identity_down tree
 
 
