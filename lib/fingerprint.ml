@@ -17,7 +17,7 @@ let verify pf =
   let initial_tree =  Caml.Option.get @@ Condense.tree_from_graph initial in
   let expected_tree = Caml.Option.get @@ Condense.tree_from_graph expected in
   let rec aux proof_state = function
-  | [] -> if Equality.struct_equal proof_state expected_tree then None else Some proof_state
+  | [] -> if Equality.equal_tree proof_state expected_tree then None else Some proof_state
   | step::rest ->
     let new_proof_state = match step with
     | AI_down -> Rules.atomic_identity_down proof_state

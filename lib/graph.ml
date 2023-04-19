@@ -76,9 +76,6 @@ let empty_graph () = {nodes=empty_vertex_set (); edges=empty_vertex_map () }
 
 let singleton v : verticies= Set.singleton (module Vertex) v
 
-
-
-
 let add_vertex vertex graph =
     {nodes = Set.add graph.nodes vertex; edges = graph.edges}
 
@@ -169,24 +166,15 @@ let add_or_init y (v:verticies option): verticies option=
 
 (** [edge_map ~reverse edge_tuple_list]: given a list of edges [edge_tuple_list],
     return a corresponding mapping, if [reverse] then the mapping is from targets to sources *)
-let edge_map ~reverse edge_tuple_list : edges =
+let edge_maps edge_tuple_list : edges =
   let rec edge_list_to_map edges map =
     match edges with
     | [] -> map
     | (x, y) :: t ->
-      let new_map =
-        if reverse then
-          Map.change map y ~f:(add_or_init x)
-        else
-          Map.change map x ~f:(add_or_init y)
-      in
+      let new_map = Map.change map y ~f:(add_or_init x) in
       edge_list_to_map t new_map
   in
   edge_list_to_map edge_tuple_list (empty_vertex_map ())
-
-let edge_maps edge_list : edges =
-      Map.merge_skewed (edge_map ~reverse:false edge_list) (edge_map ~reverse:true edge_list)
-        ~combine:(fun ~key:_ v1 v2 -> Set.union v1 v2)
 
 let to_graph vertex_list edge_list =
   let nodes = List.fold vertex_list
@@ -198,9 +186,6 @@ let to_graph vertex_list edge_list =
 
 let vset_to_iset (vset : verticies) : ISet.t =
   Set.map (module Int) vset ~f:(fun v -> v.id)
-
-let iset_to_vset map (iset:ISet.t) : verticies =
-  Set.map (module Vertex) iset ~f:(fun i -> Map.find_exn map i)
 
 let vmap_to_imap (map: edges) (nodes:verticies) : IMap.t =
   let empty_map = Set.fold nodes ~init:(Map.empty (module Int))

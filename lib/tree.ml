@@ -42,7 +42,7 @@ let from_map (map: Util.IMap.t) =
   in
   {nodes = nodes; edges = edges}
 
-(** [tree_to_graph tree] converts a tree to a graph *)
+(** [tree_to_graph tree] converts a tree to a graph TODO there seems to be a bug here*)
 let tree_to_graph tree =
   let join_sets vs1 vs2 =
     Set.fold vs1 ~init:([]) ~f:(fun li vi ->

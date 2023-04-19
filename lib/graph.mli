@@ -105,7 +105,6 @@ val edge_tuple_list : edges -> (Vertex.t * Vertex.t) list
 val edge_maps : (Vertex.t * Vertex.t) list -> edges
 val to_graph : Vertex.t list -> (Vertex.t * Vertex.t) list -> graph
 val vset_to_iset : verticies -> Util.ISet.t
-val iset_to_vset : (int, Vertex.t, 'a) Base.Map.t -> Util.ISet.t -> verticies
 val vmap_to_imap : edges -> verticies -> Util.IMap.t
 val id_map :
   verticies -> (int, Vertex.t, Base.Int.comparator_witness) Base.Map.t

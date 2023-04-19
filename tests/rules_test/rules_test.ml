@@ -16,9 +16,6 @@ let len = Array.length proofs_arr
 let () = assert (len = 9)
 
 
-
-let () = Pp_new.show_tree_as_graph_json (Option.get (Condense.tree_from_graph proofs_arr.(8).expected))
-
 let%test "test_ai1" = None = Fingerprint.verify (proofs_arr.(0))
 let%test "test_ai2" = None <> Fingerprint.verify (proofs_arr.(1))
 let%test "test_ai3" = None = Fingerprint.verify (proofs_arr.(2))

@@ -24,7 +24,7 @@ type state = {
 (* Algorithm 2.2 *)
 (** [smallest_condensible graph set]: returns the smallest condensible set
     containing all vertices of [set] *)
-let smallest_condensible graph vset =
+let smallest_condensible graph (vset: verticies): verticies option =
   if Set.length vset < 2 then None else
   let rec add_to_set res to_add =
     if Set.is_empty to_add then res else

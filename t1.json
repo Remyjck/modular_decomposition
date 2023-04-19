@@ -1,39 +1,42 @@
 {
     "nodes": [
         {
-            "id": 1,
+            "id": 9,
+            "label": "a",
+            "polarisation": false
+        },
+        {
+            "id": 99,
             "label": "a",
             "polarisation": true
         },
         {
-            "id": 2,
+            "id": 8,
             "label": "b",
-            "polarisation": true
+            "polarisation": false
         },
         {
-            "id": 3,
-            "label": "c",
-            "polarisation": true
-        },
-        {
-            "id": 4,
-            "label": "d",
-            "polarisation": true
-        },
-        {
-            "id": 5,
-            "label": "e",
+            "id": 88,
+            "label": "b",
             "polarisation": true
         }
     ],
     "edges": [
         {
-            "source": 2,
-            "target": 3
+            "source": 9,
+            "target": 99
         },
         {
-            "source": 3,
-            "target": 4
+            "source": 8,
+            "target": 88
+        },
+        {
+            "source": 9,
+            "target": 88
+        },
+        {
+            "source": 8,
+            "target": 99
         }
     ]
 }
