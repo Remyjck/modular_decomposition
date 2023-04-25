@@ -25,23 +25,23 @@ type state = {
 (** [smallest_condensible graph set]: returns the smallest condensible set
     containing all vertices of [set] *)
 let smallest_condensible graph (vset: verticies): verticies option =
-  if Set.length vset < 2 then None else
-  let rec add_to_set res to_add =
-    if Set.is_empty to_add then res else
-    let new_res = Set.union res to_add in
-    let new_connected = successors graph new_res |> Fn.flip Set.diff res in
-    let new_to_add = Set.fold new_res
-      ~init:(Set.empty (module Vertex))
-      ~f:(fun acum v ->
-        let wgi = keep_links graph new_res v in
-        Set.union acum (Set.diff new_connected wgi))
+  if Set.length vset <= 1 then
+     None
+  else
+    let rec add_to_set res to_add =
+      if Set.is_empty to_add then res else
+      let new_res = Set.union res to_add in
+      let new_connected = successors graph new_res |> Fn.flip Set.diff res in
+      let new_to_add = Set.fold new_res
+        ~init:(Set.empty (module Vertex))
+        ~f:(fun acum v ->
+          let wgi = keep_links graph new_res v in
+          Set.union acum (Set.diff new_connected wgi))
+      in
+      add_to_set new_res new_to_add
     in
-    add_to_set new_res new_to_add
-  in
-  Some (add_to_set (Set.empty (module Vertex)) vset)
+    Some (add_to_set (Set.empty (module Vertex)) vset)
 
-let new_state total_vertices =
-  {total_vertices; id_map = Hashtbl.create (module Int)}
 
 let state_of_graph graph =
   let max_id =
@@ -50,7 +50,7 @@ let state_of_graph graph =
     | None -> 0
     | Some n -> n
   in
-  new_state max_id
+  {total_vertices=max_id+1; id_map = Hashtbl.create (module Int)}
 
 
 let fresh_id state =
@@ -289,35 +289,58 @@ let isPrime graph =
     if Set.is_empty min_cond then
       true
     else
-      if Set.length min_cond = 1 && Set.length (Set.choose_exn min_cond) = Set.length graph.nodes then
-        true
-      else
-        false
+      Set.length min_cond = 1 && Set.length (Set.choose_exn min_cond) = Set.length graph.nodes
   else
     false
 
 
+let from_map (map: Util.IMap.t): Id_graph.id_graph =
+  let nodes = Map.keys map in
+  let edges =
+    let rec id_tuples_from_map (map : Util.IMap.t) =
+      if Map.is_empty map then
+        []
+      else
+        let id, id_neighbours = Map.min_elt_exn map in
+        let new_imap = Util.remove_id id map
+        in
+        let new_edges = Set.fold id_neighbours
+          ~init:[]
+          ~f:(fun accum id2 -> (id, id2) :: accum)
+        in
+        new_edges @ id_tuples_from_map new_imap
+    in
+    id_tuples_from_map map
+  in
+  {nodes; edges}
+
+let print_state state =
+  let () = Caml.print_string ("\nMax_id: " ^ Int.to_string state.total_vertices ^ "\n") in
+  let () = Hashtbl.iter_keys state.id_map ~f:(fun id -> Caml.print_string ("\n" ^ Int.to_string id ^ ": " ^ getLabel (Hashtbl.find_exn state.id_map id))) in
+  Caml.print_newline ()
 
 let tree_from_condensed (graph,state) =
   let () = assert(Set.length graph.nodes <= 1) in
   match Set.choose graph.nodes with
     | None -> None
     | Some root ->
-      let rec tree_from_id id (state : state): Tree.tree =
-        let vertex : vertex = Hashtbl.find_exn state.id_map id in
+      let rec tree_from_id state id: Tree.tree =
+        let () = Caml.print_string ("\nId to convert: " ^ Int.to_string id ^ "\n") in
+        let () = print_state state in
+        let vertex = Hashtbl.find_exn state.id_map id in
         match vertex.connective with
         | Atom atom -> {connective = Atom atom; id = vertex.id}
         | Tensor iset ->
-          let tree_list = trees_from_id_list (Set.elements iset) state in
+          let tree_list = trees_from_id_list (Set.to_list iset) state in
           let tensor_lists, tree_list = List.partition_map tree_list ~f:(fun (t:Tree.tree) ->
             match t.connective with
-            | Tree.Tensor tl -> First tl
+            | Tensor tl -> First tl
             | _ -> Second t)
           in
           let successors = List.concat (tree_list :: tensor_lists) in
           {connective = Tensor successors; id = vertex.id}
         | Par iset ->
-          let tree_list = trees_from_id_list (Set.elements iset) state in
+          let tree_list = trees_from_id_list (Set.to_list iset) state in
           let par_lists, tree_list = List.partition_map tree_list ~f:(fun t ->
             match t.connective with
             | Par tl -> First tl
@@ -326,14 +349,14 @@ let tree_from_condensed (graph,state) =
           let successors = List.concat (tree_list :: par_lists) in
           {connective = Par successors; id = vertex.id}
         | Prime map ->
-          let id_graph = Tree.from_map map in
+          let id_graph = from_map map in
           let tree_list = trees_from_id_list id_graph.nodes state in
           {connective = Prime (id_graph, tree_list); id = vertex.id}
 
       and trees_from_id_list id_list state =
-        List.map id_list ~f:(Fn.flip tree_from_id state)
+        List.map id_list ~f:(tree_from_id state)
       in
-      Some (tree_from_id root.id state)
+    Some (tree_from_id state root.id)
 
 
 

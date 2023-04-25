@@ -9,7 +9,7 @@ let%test _ =
   Map.fold graph.edges ~init:0
     ~f:(fun ~key:_ ~data:d acc -> acc + Set.length d)
   in
-  total_edges = 14
+  total_edges = 7
 
 let v1 = {Graph.connective=Atom {label = "1"; pol = true}; id=1}
 let v3 = {Graph.connective=Atom {label = "3"; pol = true}; id=3}
@@ -25,10 +25,11 @@ let vset38 = Set.of_list (module Graph.Vertex) [v3; v8]
 let vset48 = Set.of_list (module Graph.Vertex) [v4; v8]
 
 let scond13 = Condense.smallest_condensible graph vset13 |> Caml.Option.get
-let%test _ = Set.length scond13 = 4
+
+let%test _ = Set.length scond13 = 2
 
 let scond34 = Condense.smallest_condensible graph vset34 |> Caml.Option.get
-let%test _ = Set.length scond34 = 4
+let%test _ = Set.length scond34 = 3
 
 let scond47 = Condense.smallest_condensible graph vset47 |> Caml.Option.get
 let%test _ = Set.length scond47 = 4

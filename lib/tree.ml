@@ -22,25 +22,7 @@ let successors tree =
   | Par tl -> tl
   | Prime (_, tl) -> tl
 
-let from_map (map: Util.IMap.t) =
-  let nodes = Map.keys map in
-  let edges =
-    let rec id_tuples_from_map (map : Util.IMap.t) =
-      if Map.is_empty map then
-        []
-      else
-        let id, id_neighbours = Map.min_elt_exn map in
-        let new_imap = Util.remove_id id map
-        in
-        let new_edges = Set.fold id_neighbours
-          ~init:[]
-          ~f:(fun accum id2 -> (id, id2) :: accum)
-        in
-        new_edges @ id_tuples_from_map new_imap
-    in
-    id_tuples_from_map map
-  in
-  {nodes = nodes; edges = edges}
+
 
 (** [tree_to_graph tree] converts a tree to a graph TODO there seems to be a bug here*)
 let tree_to_graph tree =

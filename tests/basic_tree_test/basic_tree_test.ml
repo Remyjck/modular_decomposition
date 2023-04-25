@@ -6,11 +6,7 @@ let path = "./graph_test_suite.json"
 
 let graphs = Parsegraph.read_file_as_graphs path
 
-let _ = List.iter Pp_new.show_graph graphs
-
 let trees = List.map (fun g -> Caml.Option.get (Condense.tree_from_graph g)) graphs
-
-(* let _ = List.iter Pp_new.show_tree trees *)
 
 let%test "Equality_same_ids" =  List.for_all2 Equality.struct_equal trees trees
 let%test "Equality_diff_ids" =  List.for_all2 Equality.struct_equal trees (List.map (fun (t:Tree.tree) -> ({t with id=t.id*2})) trees)
