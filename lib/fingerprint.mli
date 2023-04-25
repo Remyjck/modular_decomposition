@@ -1,7 +1,8 @@
 type rule_id =
-    AI_down
+  | AI_down
   | Prime_down
   | Switch_Par of Rules.selector * Rules.selector * Rules.selector
+
 type proof = {
   id : string;
   initial : Graph.graph;

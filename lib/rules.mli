@@ -1,4 +1,4 @@
-type selector =  Tree.tree list -> int
+type selector = Tree.tree list -> int
 
 (* system GS is AI_down, SS_down, p_down *)
 (*  *)
@@ -15,17 +15,17 @@ type selector =  Tree.tree list -> int
 val atomic_identity_down : Tree.tree -> Tree.tree
 
 (*switch_par_generic - s& with different selection methods*)
-val switch_par_generic: selector -> selector -> selector -> Tree.tree -> Tree.tree
+val switch_par_generic :
+  selector -> selector -> selector -> Tree.tree -> Tree.tree
 
-val pick_largest: selector
-val pick_first: selector
-val pick_first_atom_or_first: selector
+val pick_largest : selector
+val pick_first : selector
+val pick_first_atom_or_first : selector
 
 (*switch_par - s&*)
-val switch_par: Tree.tree -> Tree.tree
+val switch_par : Tree.tree -> Tree.tree
 
 (*prime down - p_down*)
-val prime_down: Tree.tree -> Tree.tree
-
-val is_valid: Tree.tree -> bool
-val find_proof: Tree.tree -> string list
+val prime_down : Tree.tree -> Tree.tree
+val is_valid : Tree.tree -> bool
+val find_proof : Tree.tree -> string list

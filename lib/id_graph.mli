@@ -1,4 +1,5 @@
-type id_graph = { nodes : int list; edges : (int * int) list; }
+type id_graph = { nodes : int list; edges : (int * int) list }
+
 val length : id_graph -> int
 val is_sub_iso : id_graph -> id_graph -> bool
 val is_iso : id_graph -> id_graph -> bool
