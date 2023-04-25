@@ -143,15 +143,21 @@ let add_or_init y (v : verticies option) : verticies option =
 
 (** [edge_map ~reverse edge_tuple_list]: given a list of edges [edge_tuple_list],
     return a corresponding mapping, if [reverse] then the mapping is from targets to sources *)
-let edge_maps edge_tuple_list : edges =
-  let rec edge_list_to_map edges map =
+let edge_maps edge_list : edges =
+  let rec edge_list_to_map edges reverse map =
     match edges with
     | [] -> map
     | (x, y) :: t ->
-        let new_map = Map.change map y ~f:(add_or_init x) in
-        edge_list_to_map t new_map
+        let new_map =
+          if reverse then Map.change map y ~f:(add_or_init x)
+          else Map.change map x ~f:(add_or_init y)
+        in
+        edge_list_to_map t reverse new_map
   in
-  edge_list_to_map edge_tuple_list (empty_vertex_map ())
+  let mapping = edge_list_to_map edge_list false (empty_vertex_map ()) in
+  let mappingRev = edge_list_to_map edge_list true (empty_vertex_map ()) in
+  Map.merge_skewed mapping mappingRev ~combine:(fun ~key:_ v1 v2 ->
+      Set.union v1 v2)
 
 let to_graph vertex_list edge_list =
   let nodes =

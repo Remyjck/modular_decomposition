@@ -257,8 +257,6 @@ let process_state graph =
   let processed = process_r graph state in
   (processed, state)
 
-let process g = fst (process_state g)
-
 let isPrime graph =
   let cliques_and_in = cc_and_is graph in
   if Set.is_empty cliques_and_in then
@@ -287,35 +285,16 @@ let from_map (map : Util.IMap.t) : Id_graph.id_graph =
   in
   { nodes; edges }
 
-let print_state state =
-  let () =
-    Caml.print_string ("\nMax_id: " ^ Int.to_string state.total_vertices ^ "\n")
-  in
-  let () =
-    Hashtbl.iter_keys state.id_map ~f:(fun id ->
-        Caml.print_string
-          ("\n" ^ Int.to_string id ^ ": "
-          ^ getLabel (Hashtbl.find_exn state.id_map id)))
-  in
-  Caml.print_newline ()
-
 let tree_from_condensed (graph, state) =
   let () = assert (Set.length graph.nodes <= 1) in
   match Set.choose graph.nodes with
   | None -> None
   | Some root ->
       let rec tree_from_id state id : Tree.tree =
-        let () =
-          Caml.print_string ("\nId to convert: " ^ Int.to_string id ^ "\n")
-        in
-        let () = print_state state in
         let vertex = Hashtbl.find_exn state.id_map id in
         match vertex.connective with
-        | Atom atom ->
-            let () = Caml.print_string "\natom\n" in
-            { connective = Atom atom; id = vertex.id }
+        | Atom atom -> { connective = Atom atom; id = vertex.id }
         | Tensor iset ->
-            let () = Caml.print_string "\ntensor\n" in
             let tree_list = trees_from_id_list (Set.to_list iset) state in
             let tensor_lists, tree_list =
               List.partition_map tree_list ~f:(fun (t : Tree.tree) ->
@@ -326,7 +305,6 @@ let tree_from_condensed (graph, state) =
             let successors = List.concat (tree_list :: tensor_lists) in
             { connective = Tensor successors; id = vertex.id }
         | Par iset ->
-            let () = Caml.print_string "\npar\n" in
             let tree_list = trees_from_id_list (Set.to_list iset) state in
             let par_lists, tree_list =
               List.partition_map tree_list ~f:(fun t ->
@@ -335,7 +313,6 @@ let tree_from_condensed (graph, state) =
             let successors = List.concat (tree_list :: par_lists) in
             { connective = Par successors; id = vertex.id }
         | Prime map ->
-            let () = Caml.print_string "\nprime\n" in
             let id_graph = from_map map in
             let tree_list = trees_from_id_list id_graph.nodes state in
             { connective = Prime (id_graph, tree_list); id = vertex.id }

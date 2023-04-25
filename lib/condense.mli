@@ -12,8 +12,5 @@ val smallest_condensible :
   Graph.graph -> Graph.verticies -> Graph.verticies option
 
 val subset_add : Graph.vertex -> subset -> subset
-
-(*Process converts a graph into the modular decomposition of the graph*)
-val process : Graph.graph -> Graph.graph
 val isPrime : Graph.graph -> bool
 val tree_from_graph : Graph.graph -> Tree.tree option
