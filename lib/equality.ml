@@ -55,20 +55,33 @@ let rec struct_equal t1 t2 =
   | Some t1, Some t2 -> (
       match (t1.connective, t2.connective) with
       | Prime (_, []), Prime (_, []) -> true
-      | Prime (_, _ :: _), Prime (_, []) -> false
-      | Prime (_, []), Prime (_, _ :: _) -> false
-      | Prime (idg1, sub1), Prime (idg2, sub2) ->
-          Id_graph.is_iso idg1 idg2
-          && Caml.List.for_all2 struct_equal sub1
-               sub2 (*very suboptimal and also bad*)
+      | Prime (idg1, sub1), Prime (idg2, sub2) -> (
+          let isol = Id_graph.find_sub_iso idg1 idg2 in
+          let isor = Id_graph.find_sub_iso idg2 idg1 in
+          match (isol, isor) with
+          | Some _, None -> false
+          | None, Some _ -> false
+          | None, None -> false
+          | Some isol, Some _ ->
+              (*increasing complexity of equality check*)
+              Caml.List.for_all2
+                (fun s1 n ->
+                  let corresponding_id = Map.find_exn isol n in
+                  let corresponding_index =
+                    fst
+                      (List.findi_exn idg2.nodes ~f:(fun _ x ->
+                           x = corresponding_id))
+                  in
+                  let corresponding_sub =
+                    List.nth_exn sub2 corresponding_index
+                  in
+                  struct_equal s1 corresponding_sub)
+                sub1 idg1.nodes)
       | Atom _, Atom _ -> true
       | Tensor [], Tensor [] -> true
-      | Tensor (_ :: _), Tensor [] -> false
-      | Tensor [], Tensor (_ :: _) -> false
-      | Tensor sub1, Tensor sub2 -> Caml.List.for_all2 struct_equal sub1 sub2
+      | Tensor sub1, Tensor sub2 ->
+          Caml.List.for_all2 struct_equal sub1 sub2 (*breaks for reordering*)
       | Par [], Par [] -> true
-      | Par (_ :: _), Par [] -> false
-      | Par [], Par (_ :: _) -> false
       | Par sub1, Par sub2 -> Caml.List.for_all2 struct_equal sub1 sub2
       | _ -> false)
 
