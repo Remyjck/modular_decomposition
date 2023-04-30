@@ -285,12 +285,8 @@ let from_map (map : Util.IMap.t) : Id_graph.id_graph =
   in
   { nodes; edges }
 
-let tree_from_condensed (graph, state) =
-  let () = assert (Set.length graph.nodes <= 1) in
-  match Set.choose graph.nodes with
-  | None -> None
-  | Some root ->
-      let rec tree_from_id state id : Tree.tree =
+
+let rec tree_from_id state id : Tree.tree =
         let vertex = Hashtbl.find_exn state.id_map id in
         match vertex.connective with
         | Atom atom -> { connective = Atom atom; id = vertex.id }
@@ -318,8 +314,12 @@ let tree_from_condensed (graph, state) =
             { connective = Prime (id_graph, tree_list); id = vertex.id }
       and trees_from_id_list id_list state =
         List.map id_list ~f:(tree_from_id state)
-      in
-      Some (tree_from_id state root.id)
+
+let tree_from_condensed (graph, state) =
+  let () = assert (Set.length graph.nodes <= 1) in
+  match Set.choose graph.nodes with
+  | None -> None
+  | Some root -> Some (tree_from_id state root.id)
 
 let tree_from_graph (graph : Graph.graph) =
   if Graph.is_empty graph then Some (Tree.empty_tree 1)
