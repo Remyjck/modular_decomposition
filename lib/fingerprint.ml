@@ -12,13 +12,15 @@ type proof = {
   steps : rule_id list;
 }
 
+
+
 let verify pf =
   let { id = _; initial; expected; steps } = pf in
   let initial_tree = Caml.Option.get @@ Condense.tree_from_graph initial in
   let expected_tree = Caml.Option.get @@ Condense.tree_from_graph expected in
   let rec aux proof_state = function
     | [] ->
-        if Equality.equal_tree proof_state expected_tree then None
+        if Equality.struct_equal proof_state expected_tree then None
         else Some proof_state
     | step :: rest ->
         let new_proof_state =
