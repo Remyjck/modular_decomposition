@@ -9,3 +9,4 @@ and tree = { connective : connective; id : int }
 val successors : tree -> tree list
 val tree_to_graph : tree -> Graph.graph
 val empty_tree : int -> tree
+val length : tree -> int

@@ -94,7 +94,6 @@ let ullmann_find perm matA matB =
       in
       (*We are now in the for loop*)
       (*Mark c as used*)
-      (*TODO why is this working*)
       let freeVert = setImmut freeVert currentColumn true in
       aux freeVert perm (currentRow + 1) currentColumn
   in
@@ -115,6 +114,9 @@ let find_sub_iso idg1 idg2 =
     let adj2 = adj_mat idg2 Dim2.value in
     ullmann_find m0 adj1 adj2 >>= fun perm ->
     return (permToAssoc idg1 idg2 perm)
+
+let is_sub_iso idg1 idg2 =
+  match find_sub_iso idg1 idg2 with Some _ -> true | None -> false
 
 let is_iso idg1 idg2 =
   match (find_sub_iso idg1 idg2, find_sub_iso idg2 idg1) with

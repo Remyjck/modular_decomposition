@@ -1,5 +1,4 @@
 val is_dual : Tree.tree -> Tree.tree -> bool
-val struct_equal : Tree.tree -> Tree.tree -> bool
 val equal_tree : Tree.tree -> Tree.tree -> bool
 val is_empty : Tree.tree -> bool
 val simplify : Tree.tree -> Tree.tree option

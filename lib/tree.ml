@@ -77,3 +77,10 @@ let tree_to_graph tree =
   let vertices, edges = tree_to_graph_r tree in
   let edges = Graph.edge_maps edges in
   { Graph.nodes = vertices; edges }
+
+let rec length tree =
+  match tree.connective with
+  | Atom _ -> 1
+  | Tensor tl -> List.fold tl ~init:0 ~f:(fun acc t -> acc + length t)
+  | Par tl -> List.fold tl ~init:0 ~f:(fun acc t -> acc + length t)
+  | Prime (_, tl) -> List.fold tl ~init:0 ~f:(fun acc t -> acc + length t)

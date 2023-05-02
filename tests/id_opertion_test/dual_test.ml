@@ -27,3 +27,6 @@ let%test "complement_of_empty_is_empty" =
 
 let%test "completion_of_complete_is_complete" =
   is_iso (completetion_graph k4) k4
+
+let p4 = { nodes = [ 1; 2; 3; 4 ]; edges = [ (1, 2); (2, 3); (3, 4) ] }
+let%test "p4_is_self_dual" = is_dual p4 p4

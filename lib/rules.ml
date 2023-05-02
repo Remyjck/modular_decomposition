@@ -38,10 +38,10 @@ let rec atomic_identity_down (tree : tree) =
         | Some (a, b) ->
             Par
               (List.filter nodes ~f:(fun t ->
-                   not (Equality.struct_equal t a || Equality.struct_equal t b)))
+                   not (Equality.equal_tree t a || Equality.equal_tree t b)))
       in
       let new_tree = { connective = new_node; id = tree.id + 1 } in
-      if Equality.struct_equal new_tree tree then tree
+      if Equality.equal_tree new_tree tree then tree
       else atomic_identity_down new_tree
   | _ -> propagate_once atomic_identity_down tree
 
