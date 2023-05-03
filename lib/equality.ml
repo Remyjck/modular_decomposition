@@ -3,7 +3,7 @@ open Base
 
 (*Rethink this*)
 let rec is_dual t1 t2 =
-  match (t1.connective, t2.connective) with
+  match (t1, t2) with
   | Prime (idg1, sub1), Prime (idg2, sub2) ->
       Id_graph.is_dual idg1 idg2
       && Caml.List.for_all2 is_dual sub1 sub2 (*very suboptimal and also bad*)
@@ -12,7 +12,6 @@ let rec is_dual t1 t2 =
   | Par sub1, Par sub2 -> Caml.List.for_all2 is_dual sub1 sub2
   | _ -> false
 
-let is_empty tree = Graph.is_empty (tree_to_graph tree)
 let simplify tree = Condense.tree_from_graph @@ tree_to_graph tree
 
 let isomorphism_pairing idg1 sub1 idg2 sub2 =
@@ -52,7 +51,7 @@ let rec equal_tree t1 t2 =
   | Some _, None -> false
   | None, Some _ -> false
   | Some t1, Some t2 -> (
-      match (t1.connective, t2.connective) with
+      match (t1, t2) with
       | Prime (idg1, sub1), Prime (idg2, sub2) -> (
           match isomorphism_pairing idg1 sub1 idg2 sub2 with
           | None -> false

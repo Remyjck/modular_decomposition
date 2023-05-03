@@ -1,42 +1,37 @@
 open Base
 open Id_graph
 
-type connective =
+type tree =
   | Atom of Graph.atom
   | Tensor of tree list
   | Par of tree list
   | Prime of id_graph * tree list
 
-and tree = { connective : connective; id : int }
-
-let empty_tree id = { id; connective = Par [] }
+let empty_tree () = Par []
+let hash_tree (tree : tree) = Hashtbl.hash tree
 
 let successors tree =
-  match tree.connective with
+  match tree with
   | Atom _ -> []
   | Tensor tl -> tl
   | Par tl -> tl
   | Prime (_, tl) -> tl
 
 (** [tree_to_graph tree] converts a tree to a graph TODO there seems to be a bug here*)
-let tree_to_graph tree =
+let tree_to_graph tree : Graph.graph =
   let join_sets vs1 vs2 =
     Set.fold vs1 ~init:[] ~f:(fun li vi ->
         Set.fold vs2 ~init:li ~f:(fun lj vj -> (vi, vj) :: (vj, vi) :: lj))
   in
   let rec tree_to_graph_r tree =
-    match tree.connective with
+    match tree with
     | Atom atom ->
-        let node =
-          Set.singleton
-            (module Graph.Vertex)
-            { connective = Atom atom; id = tree.id }
-        in
+        let node = Graph.singleton (Atom atom) in
         (node, [])
     | Par tl ->
         let nodes, edges =
           List.fold tl
-            ~init:(Graph.empty_vertex_set (), [])
+            ~init:(Graph.empty_node_set (), [])
             ~f:(fun (vset, el) t ->
               let nodes, el_to_add = tree_to_graph_r t in
               (Set.union vset nodes, el_to_add @ el))
@@ -46,21 +41,21 @@ let tree_to_graph tree =
         let nel = List.map tl ~f:tree_to_graph_r in
         let nodes, edges =
           List.fold nel
-            ~init:(Graph.empty_vertex_set (), [])
+            ~init:(Graph.empty_node_set (), [])
             ~f:(fun (vsetacc, elacc) (vset, el) ->
-              let vertices = Set.union vsetacc vset in
+              let nodes = Set.union vsetacc vset in
               let edge_base = el @ elacc in
               let edges = join_sets vsetacc vset in
-              (vertices, edges @ edge_base))
+              (nodes, edges @ edge_base))
         in
         (nodes, edges)
     | Prime (id_graph, tl) ->
-        let vertices, edges, id_map =
+        let nodes, edges, id_map =
           List.fold tl
-            ~init:(Graph.empty_vertex_set (), [], Map.empty (module Int))
+            ~init:(Graph.empty_node_set (), [], Map.empty (module Int))
             ~f:(fun (vset, el, map) t ->
               let nodes, edges = tree_to_graph_r t in
-              let nmap = Map.add_exn map ~key:t.id ~data:nodes in
+              let nmap = Map.add_exn map ~key:(hash_tree t) ~data:nodes in
               (Set.union vset nodes, edges @ el, nmap))
         in
         let new_edges =
@@ -72,14 +67,14 @@ let tree_to_graph tree =
               in
               new_edges @ el)
         in
-        (vertices, new_edges @ edges)
+        (nodes, new_edges @ edges)
   in
-  let vertices, edges = tree_to_graph_r tree in
+  let nodes, edges = tree_to_graph_r tree in
   let edges = Graph.edge_maps edges in
-  { Graph.nodes = vertices; edges }
+  { nodes; edges }
 
 let rec length tree =
-  match tree.connective with
+  match tree with
   | Atom _ -> 1
   | Tensor tl -> List.fold tl ~init:0 ~f:(fun acc t -> acc + length t)
   | Par tl -> List.fold tl ~init:0 ~f:(fun acc t -> acc + length t)
