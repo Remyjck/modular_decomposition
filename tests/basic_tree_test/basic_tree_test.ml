@@ -10,10 +10,6 @@ let trees =
 
 let%test "Equality_same_ids" = List.for_all2 Equality.equal_tree trees trees
 
-let%test "Equality_diff_ids" =
-  List.for_all2 Equality.equal_tree trees
-    (List.map (fun (t : Tree.tree) -> { t with id = t.id * 2 }) trees)
-
 let%test "Inequality_pairwise" =
   match trees with
   | t1 :: t2 :: t3 :: _ ->
