@@ -8,99 +8,94 @@ type atom = { label : string; pol : bool } [@@deriving compare, sexp, hash]
 type node = Atom of atom | Tensor of ISet.t | Par of ISet.t | Prime of IMap.t
 [@@deriving compare, sexp, hash]
 
-type vertex = { connective : node; id : int } [@@deriving compare, sexp, hash]
-
-let getLabel vertex =
-  match vertex.connective with
+let getLabel node =
+  match node with
   | Atom atom -> atom.label
   | Tensor _ -> "⊗"
   | Par _ -> "⅋"
   | Prime _ -> "prime"
 
-module Vertex = struct
+module Node = struct
   module T = struct
-    type t = vertex [@@deriving compare, sexp, hash]
+    type t = node [@@deriving compare, sexp, hash]
 
-    let show t = Stdio.printf "%s %d" (getLabel t) t.id
+    let show t = Stdio.printf "%s" (getLabel t)
   end
 
   include T
   include Comparable.Make (T)
 end
 
-let vertex_index elem l =
+let node_index elem l =
   let rec index_r elem l i =
     match l with
     | [] -> raise_s [%message "error" "Vertex not found when looking for index"]
-    | h :: t -> if Vertex.equal h elem then i else index_r elem t (i + 1)
+    | h :: t -> if Node.equal h elem then i else index_r elem t (i + 1)
   in
   index_r elem l 0
 
-module VSet = struct
+module NSet = struct
   module T = struct
-    type t = Base.Set.M(Vertex).t [@@deriving compare, sexp, hash]
+    type t = Base.Set.M(Node).t [@@deriving compare, sexp, hash]
   end
 
   include T
   include Comparable.Make (T)
 end
 
-module VMap = struct
-  type t = VSet.t Base.Map.M(Vertex).t
+module NMap = struct
+  type t = NSet.t Base.Map.M(Node).t
 end
 
-type verticies = VSet.t
-type edges = VMap.t
-type graph = { nodes : verticies; edges : edges }
+type nodes = NSet.t
+type edges = NMap.t
+type graph = { nodes : nodes; edges : edges }
 
-let empty_vertex_set () : verticies = Set.empty (module Vertex)
-let empty_vertex_map () : edges = Map.empty (module Vertex)
+let empty_node_set () : nodes = Set.empty (module Node)
+let empty_node_map () : edges = Map.empty (module Node)
+let empty_graph () = { nodes = empty_node_set (); edges = empty_node_map () }
+let singleton v : nodes = Set.singleton (module Node) v
 
-let empty_graph () =
-  { nodes = empty_vertex_set (); edges = empty_vertex_map () }
-
-let singleton v : verticies = Set.singleton (module Vertex) v
-
-let add_vertex vertex graph =
-  { nodes = Set.add graph.nodes vertex; edges = graph.edges }
+let add_node node graph =
+  { nodes = Set.add graph.nodes node; edges = graph.edges }
 
 (** [graph_difference graph vertices]: subgraph of [graph] that contains all vertices not in
     [vertices] *)
-let graph_difference graph (vertices : verticies) =
-  let nodes = Set.diff graph.nodes vertices in
-  let edges = complement_map vertices graph.edges in
+let graph_difference graph (nodes : nodes) =
+  let nodes = Set.diff graph.nodes nodes in
+  let edges = complement_map nodes graph.edges in
   { nodes; edges }
 
 let find_or_empty map v =
-  match Map.find map v with None -> empty_vertex_set () | Some vset -> vset
+  match Map.find map v with None -> empty_node_set () | Some vset -> vset
 
 (** [successors graph vertices]: set of vertices to which [vertices] is
     connected *)
-let successors graph (vertices : verticies) : verticies =
-  Set.fold vertices ~init:(empty_vertex_set ()) ~f:(fun accum v ->
+let successors graph (nodes : nodes) : nodes =
+  Set.fold nodes ~init:(empty_node_set ()) ~f:(fun accum v ->
       let to_add =
         match Map.find graph.edges v with
-        | None -> empty_vertex_set ()
+        | None -> empty_node_set ()
         | Some vset -> vset
       in
       Set.union accum to_add)
-  |> Fn.flip Set.diff vertices
+  |> Fn.flip Set.diff nodes
 
 (** [connect_vertices vertices vertex graph]: for a given [graph],
     add edges connecting every element of [vertices] to [vertex] *)
-let connect_vertices_to_vertex (vertices : verticies) vertex graph =
+let connect_vertices_to_vertex (nodes : nodes) vertex graph =
   let () = assert (Set.mem graph.nodes vertex) in
-  let () = assert (Set.for_all vertices ~f:(Set.mem graph.nodes)) in
+  let () = assert (Set.for_all nodes ~f:(Set.mem graph.nodes)) in
   let edges =
-    Set.fold vertices ~init:graph.edges ~f:(fun accum v ->
+    Set.fold nodes ~init:graph.edges ~f:(fun accum v ->
         Map.update accum v ~f:(function
           | None -> singleton vertex
           | Some vset -> Set.add vset vertex))
   in
   let edges =
     Map.update edges vertex ~f:(function
-      | None -> vertices
-      | Some vset -> Set.union vset vertices)
+      | None -> nodes
+      | Some vset -> Set.union vset nodes)
   in
   { nodes = graph.nodes; edges }
 
@@ -114,17 +109,17 @@ let connect_vertices v1 v2 g =
 
 (** [induced_subgraph graph vertices]: subgraph of [graph] that contains only
     the vertices in [vertices]  *)
-let induced_subgraph graph (vertices : verticies) =
-  let edges = intersect_map vertices graph.edges in
-  { nodes = vertices; edges }
+let induced_subgraph graph (nodes : nodes) =
+  let edges = intersect_map nodes graph.edges in
+  { nodes; edges }
 
 (** [remove_vertex_edges]: given a mapping [edges], remove [vertex] from
   its keys and values  *)
-let remove_vertex_edges (edges : edges) vertex : edges =
+let remove_node_edges (edges : edges) vertex : edges =
   Map.remove edges vertex |> Map.map ~f:(Fn.flip Set.remove vertex)
 
-let remove_vertices_edges (vertices : verticies) edges =
-  Set.fold vertices ~init:edges ~f:remove_vertex_edges
+let remove_nodes_edges (nodes : nodes) edges =
+  Set.fold nodes ~init:edges ~f:remove_node_edges
 
 (** [edge_tuple_list edges]: given a mapping [edges],
     return a corresponding list of edges  *)
@@ -135,10 +130,10 @@ let rec edge_tuple_list (edge_map : edges) =
     let new_edges =
       Set.fold vi_neighbours ~init:[] ~f:(fun accum vj -> (vi, vj) :: accum)
     in
-    let new_edge_map = remove_vertex_edges edge_map vi in
+    let new_edge_map = remove_node_edges edge_map vi in
     new_edges @ edge_tuple_list new_edge_map
 
-let add_or_init y (v : verticies option) : verticies option =
+let add_or_init y (v : nodes option) : nodes option =
   match v with None -> Some (singleton y) | Some z -> Some (Set.add z y)
 
 (** [edge_map ~reverse edge_tuple_list]: given a list of edges [edge_tuple_list],
@@ -154,45 +149,18 @@ let edge_maps edge_list : edges =
         in
         edge_list_to_map t reverse new_map
   in
-  let mapping = edge_list_to_map edge_list false (empty_vertex_map ()) in
-  let mappingRev = edge_list_to_map edge_list true (empty_vertex_map ()) in
+  let mapping = edge_list_to_map edge_list false (empty_node_map ()) in
+  let mappingRev = edge_list_to_map edge_list true (empty_node_map ()) in
   Map.merge_skewed mapping mappingRev ~combine:(fun ~key:_ v1 v2 ->
       Set.union v1 v2)
 
-let to_graph vertex_list edge_list =
+let to_graph node_list edge_list =
   let nodes =
-    List.fold vertex_list ~init:(empty_vertex_set ()) ~f:(fun acum v ->
+    List.fold node_list ~init:(empty_node_set ()) ~f:(fun acum v ->
         Set.add acum v)
   in
   let edges = edge_maps edge_list in
   { nodes; edges }
 
-let vset_to_iset (vset : verticies) : ISet.t =
-  Set.map (module Int) vset ~f:(fun v -> v.id)
-
-let vmap_to_imap (map : edges) (nodes : verticies) : IMap.t =
-  let empty_map =
-    Set.fold nodes
-      ~init:(Map.empty (module Int))
-      ~f:(fun accum vertex ->
-        Map.add_exn accum ~key:vertex.id ~data:(Set.empty (module Int)))
-  in
-  Map.fold map ~init:empty_map ~f:(fun ~key:k ~data:v accum ->
-      let data = vset_to_iset v in
-      Map.update accum k.id ~f:(function
-        | None -> data
-        | Some iset -> Set.union iset data))
-
-(** [id_map vset]: returns a map from the [id]s of the elements of [vset] to
-    the elements themselves *)
-let id_map (vset : verticies) =
-  Set.fold vset
-    ~init:(Map.empty (module Int))
-    ~f:(fun accum vertex -> Map.add_exn accum ~key:vertex.id ~data:vertex)
-
 let is_dual_atom (a : atom) (b : atom) = a.pol = not b.pol && a.label = b.label
-
-let equal_graph g1 g2 =
-  VSet.equal g1.nodes g2.nodes && Map.equal VSet.equal g1.edges g2.edges
-
-let is_empty g = Set.is_empty g.nodes && Map.is_empty g.edges
+let is_empty graph = Set.is_empty graph.nodes && Map.is_empty graph.edges
