@@ -5,20 +5,13 @@ type rule_id =
   | Prime_down
   | Switch_Par of Rules.selector * Rules.selector * Rules.selector
 
-type proof = {
-  id : string;
-  initial : Graph.graph;
-  expected : Graph.graph;
-  steps : rule_id list;
-}
+type proof = { initial : Tree.tree; expected : Tree.tree; steps : rule_id list }
 
 let verify pf =
-  let { id = _; initial; expected; steps } = pf in
-  let initial_tree = Caml.Option.get @@ Condense.tree_from_graph initial in
-  let expected_tree = Caml.Option.get @@ Condense.tree_from_graph expected in
+  let { initial; expected; steps } = pf in
   let rec aux proof_state = function
     | [] ->
-        if Equality.equal_tree proof_state expected_tree then None
+        if Equality.equal_tree proof_state expected then None
         else Some proof_state
     | step :: rest ->
         let new_proof_state =
@@ -33,9 +26,8 @@ let verify pf =
         let new_proof_state =
           match Equality.simplify new_proof_state with
           | Some t -> t
-          | None -> Tree.empty_tree 300
+          | None -> Tree.empty_tree ()
         in
-        let new_proof_state = { new_proof_state with id = 200 } in
         aux new_proof_state rest
   in
-  aux initial_tree steps
+  aux initial steps
