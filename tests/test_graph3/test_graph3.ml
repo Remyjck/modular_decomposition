@@ -20,7 +20,7 @@ let%test _ = Set.length (Set.choose_exn min_cond) = 4
 let prime_list =
   Set.fold min_cond
     ~init:[]
-    ~f:(fun accum vset -> 
+    ~f:(fun accum vset ->
       let subgraph = Graph.induced_subgraph condensed_graph vset in
       let node = Graph.Prime (Graph.vmap_to_imap subgraph.edges subgraph.nodes) in
       (node, vset) :: accum)
@@ -29,7 +29,7 @@ let%test _ = Set.length (snd (List.nth_exn prime_list 0)) = 4
 
 let prime_condensed_graph =
   List.fold prime_list
-    ~init:condensed_graph 
+    ~init:condensed_graph
     ~f:(fun graph (node, h) -> Condense.condense_prime node h graph state)
 let%test _ = Set.length prime_condensed_graph.nodes = 2
 
@@ -43,7 +43,7 @@ let res2 = Condense.process graph2 state2
 let%test _ = Graph.VSet.equal res.nodes res2.nodes
 let%test _  = Hashtbl.equal (Graph.Vertex.equal) state.id_map state2.id_map
 
-let tree = Tree.tree_from_condensed res state |> Option.value_exn
+let tree = Tree.tree_from_condensed res state |> Caml.Option.get
 
 let json_as_graph = Parsegraph.serialize_tree_as_graph tree
 let json = Parsegraph.serialize_tree tree

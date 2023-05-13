@@ -29,7 +29,7 @@ let%test _ = Graph.VSet.equal (Graph.connected graph vset1) vset2
 let dummy_state : Graph.state = {
   total_vertices = 8;
   id_map = Hashtbl.create (module Int)
-} 
+}
 let neighbours = Graph.neighbours graph vset1
 let () = assert(Graph.VSet.equal neighbours vset2)
 let dummy_graph = Graph.replace graph vset1 vertex dummy_state
@@ -45,7 +45,7 @@ let%test _ =
         Set.mem (Map.find_exn graph.edges v) vertex)
 
 let%test _ =
-  let graph = Graph.(<~>) graph vset1 in 
+  let graph = Graph.(<~>) graph vset1 in
   Set.for_all graph.nodes
     ~f:(fun v -> not (Set.mem vset1 v))
   &&
@@ -87,7 +87,7 @@ let%test _ = Set.length min_cond = 1
 let prime_list =
   Set.fold min_cond
     ~init:[]
-    ~f:(fun accum vset -> 
+    ~f:(fun accum vset ->
       let subgraph = Graph.induced_subgraph condensed_graph vset in
       let node = Graph.Prime (Graph.vmap_to_imap subgraph.edges subgraph.nodes) in
       (node, vset) :: accum)
@@ -96,10 +96,10 @@ let%test _ = Set.length (snd (List.nth_exn prime_list 0)) = 5
 
 let res =
   List.fold prime_list
-    ~init:condensed_graph 
+    ~init:condensed_graph
     ~f:(fun graph (node, h) -> Condense.condense_prime node h graph state)
 let%test _ = Set.length res.nodes = 1
-let () = 
+let () =
   let root = Set.choose_exn res.nodes in
   Hashtbl.add_exn state.id_map ~key:(root.id) ~data:(root)
 
@@ -107,7 +107,7 @@ let res2 = Condense.process graph2 state2
 let%test _ = Graph.VSet.equal res.nodes res2.nodes
 let%test _  = Hashtbl.equal (Graph.Vertex.equal) state.id_map state2.id_map
 
-let tree = Tree.tree_from_condensed res state |> Option.value_exn
+let tree = Tree.tree_from_condensed res state |> Caml.Option.get
 
 let json_as_graph = Parsegraph.serialize_tree_as_graph tree
 let json = Parsegraph.serialize_tree tree

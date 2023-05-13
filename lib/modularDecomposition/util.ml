@@ -17,8 +17,8 @@ let index elem l =
   index_r elem l 0
 
 (** Given [string] of the form [[0-9]*-rep], return the integer written without the "rep" *)
-let remove_rep string = 
-  let () = assert (Stdlib.String.ends_with ~suffix:"-rep" string) in
+let remove_rep string =
+  let string = Base.String.chop_suffix string ~suffix:"-rep" |> Base.Option.value_exn in
   Base.String.lsplit2_exn string ~on:'-' |> fst |> Base.Int.of_string
 
 let resolve = function

@@ -7,7 +7,7 @@ let js_obj =
 
 let graph, state = Parsegraph.parse js_obj
 let condensed = Condense.process graph state
-let tree = Tree.tree_from_condensed condensed state |> Option.value_exn
+let tree = Tree.tree_from_condensed condensed state |> Caml.Option.get
 
 let graph2 = Tree.tree_to_graph tree
 let%test _ = Graph.VSet.equal graph.nodes graph2.nodes
